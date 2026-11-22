@@ -21,7 +21,7 @@ mkdirSync(out, { recursive: true });
 
 // The Mini App scene is included when its two screenshots are in docs/screenshots and its narration exists.
 const shots = join(here, "..", "..", "..", "docs", "screenshots");
-const withMini = ["6-miniapp-open.png", "7-miniapp-paid.png"].every((f) => existsSync(join(shots, f)));
+const withMini = ["6-miniapp-order.png", "7-miniapp-paid.png"].every((f) => existsSync(join(shots, f)));
 const ORDER = ["01-problem", "02-what", "03-private", ...(withMini ? ["03b-miniapp"] : []), "04-group-channel", "05-bug-loop", "05b-install", "06-close"];
 const SCENES = ["s0", "s1", "s2", "s3", ...(withMini ? ["sM"] : []), "s4", "s5", "s6", "s7"];
 console.log(withMini ? "Mini App scene: included" : "Mini App scene: skipped (screenshots not in docs/screenshots)");
