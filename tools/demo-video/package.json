@@ -1,0 +1,8 @@
+{
+  "name": "botproof-demo-video",
+  "private": true,
+  "type": "module",
+  "description": "Builds the demo video from real Kane evidence packs, real run logs and a narration track.",
+  "scripts": { "build": "node make-video.mjs" },
+  "dependencies": { "ffmpeg-static": "5.3.0" }
+}
