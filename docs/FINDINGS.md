@@ -18,6 +18,14 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Mini App — 22 Nov 2026, 22:51: PASS (spike Q3 answered)
+
+`miniapp_checkout` failed twice on Kane's checks (20:40: missed the bold "💳 Checkout" prompt; 22:26: Mini App title check),
+then passed at 22:51 after the prompt check was worded by meaning: 1192 s, 120.9 credits, pack `8e67fd7d-…`. Kane opened
+the Mini App from the reply-keyboard button inside Telegram Web, used its form, pressed Telegram's main button, and saw
+the bot confirm the payment (`web_app_data` reached the bot). Also 22:08: `group_close_admin` PASS again (374 s, 51.0).
+**11 flows now pass live.**
+
 ## 13-flow batch — 22 Nov 2026, 20:43–21:15: 2 more pass, then killed for memory
 
 | Flow | Result | Time | Credits | Cause |
@@ -225,7 +233,7 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 |---|---|---|---|
 | 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES, when BotProof owns Chrome** (master profile copy + `--cdp-endpoint`): 2 consecutive passes. When Kane launched Chrome itself it used a blank temp profile or emptied the given one | runs of 22 Nov 15:22 and 15:32 |
 | 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **YES** | `start`, `menu_pagination`, `item_details`, `main_menu` PASS (22 Nov) |
-| 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
+| 3 | Interact with a Mini App in Telegram Web's iframe | **YES** — `miniapp_checkout` PASS 22 Nov 22:51 (1192 s, 120.9 credits): order confirmed, Mini App opened inside Telegram Web, form used, Telegram's main button pressed, payment confirmed by the bot | pack `8e67fd7d-…` |
 | 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **Group: YES** (`group_order` PASS: tapped a button on the bot's group message, saw the edit). **Channel: posting yes** (`channel_edit_delete` PASS); tapping a vote on a post not yet passed | runs of 22 Nov 16:33–17:17 |
 | 5 | Headless works? Time and credits per flow | Authoring 230–600 s / 56–124 credits per flow; a full cached replay 63 s / 0 credits; headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
 
