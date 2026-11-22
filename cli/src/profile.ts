@@ -1,6 +1,6 @@
 // The logged-in Telegram Web session lives in a "master" Chrome profile that Kane never touches.
-// Before each flow BotProof copies it to a scratch profile and runs Kane on the copy
-// (`kane-cli testmd run --chrome-profile <copy>`).
+// Before each flow BotProof copies it to a scratch profile, starts Chrome on the copy and
+// attaches Kane to that Chrome over CDP (see chrome.ts).
 //
 // Why: on 22 Nov the configured profile was found completely empty after a replay that
 // healed in a "fresh browser" — the Telegram session was gone (docs/FINDINGS.md). Running on a

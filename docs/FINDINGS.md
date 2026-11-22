@@ -18,6 +18,26 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Third run — 22 Nov 2026, 15:12: Kane ignored the configured profile
+
+| Flow | Result | Time | Credits | Notes |
+|---|---|---|---|---|
+| `private/start_test.md` | FAIL at step 1 | 76 s | 2.99 | Telegram's "Log in by QR Code" screen, although the master profile (43 entries, Telegram `user_auth` and auth keys in IndexedDB) and its copy `chrome-profile-run` were both logged in. |
+
+Kane's config pointed at `chrome-profile-run`, but Chrome wrote nothing there. kane-cli instead started Chrome in a new
+blank folder `%TEMP%\kane-clean-*` created at the time of the run. The same temp folders line up with the two earlier
+failures (the heal's "fresh browser" at 14:56/14:57 and the stuck sample flow at 14:46/14:48). kane-cli 0.10.7's launcher
+(`dist/chunk-IVES4QTY.js`) has two branches: a CDP endpoint is used as-is and returns early, otherwise it uses
+`config.chrome_profile_path` or creates a `kane-clean-` temp dir. Why the temp-dir branch was taken with a profile
+configured is not known (run 1 at 14:35 did get the logged-in profile).
+
+**Fix (22 Nov):** BotProof no longer lets Kane launch Chrome. For each flow it copies the master profile, starts Chrome
+itself on the copy with `--remote-debugging-port`, waits for `/json/version`, and runs
+`kane-cli testmd run <flow> --cdp-endpoint http://127.0.0.1:<port>` (flag verified in `testmd run --help`; the CDP
+branch in the launcher skips all profile handling). Chrome is stopped after the flow. Verified here on Linux: Chrome
+starts on the copy, the endpoint answers, Kane is invoked with it, Chrome exits cleanly. Not yet verified: a logged-in
+run through CDP on the developer's machine, and whether a heal stays on the CDP browser.
+
 ## Second run — 22 Nov 2026, 14:51: the Telegram login was wiped
 
 | Flow | Result | Time | Credits | Notes |
@@ -30,7 +50,7 @@ confirmed (kane-cli's runner is a compressed binary; its launcher code only show
 `--user-data-dir` and killed with SIGKILL). The timing points at the heal's "fresh browser". To report to the Kane team
 (Slack / GitHub issue) with the run-2 evidence pack.
 
-**Q1 answer so far: the session is NOT safely kept across runs when Kane owns the profile.**
+**Q1 answer so far: the session is NOT safely kept across runs when Kane owns the profile** (see the third run: Kane may not even use it).
 
 Mitigation (in `cli/src/profile.ts`, since 22 Nov): the logged-in profile is a **master Kane never sees**. Before every
 flow BotProof copies it (minus caches and lock files) to `<master>-run` and points Kane at the copy with

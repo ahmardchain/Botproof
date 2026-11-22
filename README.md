@@ -128,8 +128,9 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 ## Limits
 
 - Needs a dedicated test Telegram account and Chrome on the machine running Kane. Its Telegram Web session lives in a
-  Chrome profile outside the repo (`~/.botproof/chrome-profile`); never commit or share it. Kane runs on a fresh copy of
-  it per flow, because a Kane replay heal was seen to empty the profile it was given ([FINDINGS](docs/FINDINGS.md)).
+  Chrome profile outside the repo (`~/.botproof/chrome-profile`); never commit or share it. For each flow BotProof starts
+  Chrome on a fresh copy of it and attaches Kane over CDP (`--cdp-endpoint`), because when Kane launched Chrome itself it
+  sometimes used a blank temp profile or emptied the one it was given ([FINDINGS](docs/FINDINGS.md)).
 - Telegram Web K only (`web.telegram.org/k/`); the official apps are not tested.
 - Flows run one after another, not in parallel: `kane-cli testrun` gives each worker a fresh Chrome profile, which has no
   Telegram session ([FINDINGS](docs/FINDINGS.md#design-decision-from-the-docs-testmd-run-per-flow-not-testrun)).
