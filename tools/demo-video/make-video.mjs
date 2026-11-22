@@ -36,7 +36,9 @@ mkdirSync(build, { recursive: true });
 mkdirSync(out, { recursive: true });
 mkdirSync(join(here, "audio"), { recursive: true });
 
-const story = JSON.parse(readFileSync(join(here, "storyboard.json"), "utf8"));
+const sbArg = process.argv.find((a) => a.startsWith("--storyboard="));
+const story = JSON.parse(readFileSync(sbArg ? resolve(sbArg.slice(13)) : join(here, "storyboard.json"), "utf8"));
+const noAudio = process.argv.includes("--no-audio");
 const audioUrls = existsSync(join(here, "audio.json")) ? JSON.parse(readFileSync(join(here, "audio.json"), "utf8")) : {};
 
 // ---------- helpers ----------
@@ -162,6 +164,11 @@ function visual(v) {
       return packFrames(v).map((png) => ({ png, weight: 1 }));
     case "stats":
       return stats().map((png) => ({ png, weight: 2.5 }));
+    case "image": {
+      const img = join(root, v.file);
+      if (!existsSync(img)) return [];
+      return [{ png: render(page(`<div class="frame"><img src="${pathToFileURL(img).href}"></div><div class="cap"><b>Kane</b>${esc(v.label ?? "")}</div>`, false)), weight: v.weight ?? 2.5 }];
+    }
     case "recording": {
       // A BotProof --record capture of Kane driving Telegram Web: newest folder whose name ends with -<flow>.
       const dir = join(root, "botproof", "recordings");
@@ -206,9 +213,10 @@ if (process.argv.includes("--audio-only")) {
 const segFiles = [];
 for (const seg of story.segments) {
   console.log(`▶ ${seg.id}`);
-  const audio = await ensureAudio(seg.id);
+  const audio = noAudio ? undefined : await ensureAudio(seg.id);
   const frames = seg.visuals.flatMap(visual);
-  const total = audio ? audioDuration(audio) + 1.2 : frames.reduce((s, f) => s + f.weight * 2, 0);
+  // Narration length + 1.2 s; without the audio file, the storyboard's known narration length keeps the same timing.
+  const total = audio ? audioDuration(audio) + 1.2 : seg.seconds ? seg.seconds + 1.2 : frames.reduce((s, f) => s + f.weight * 2, 0);
   const wsum = frames.reduce((s, f) => s + f.weight, 0);
   const clips = [];
   frames.forEach((f, i) => {
@@ -240,7 +248,7 @@ for (const seg of story.segments) {
 }
 const concat = join(build, "segments.txt");
 writeFileSync(concat, segFiles.map((f) => `file '${f.replace(/'/g, "'\\''")}'`).join("\n") + "\n");
-const final = join(out, "botproof-demo.mp4");
+const final = join(out, noAudio ? "botproof-demo-video-only.mp4" : "botproof-demo.mp4");
 execFileSync(ffmpeg, ["-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", concat, "-c", "copy", "-movflags", "+faststart", final], { stdio: "inherit" });
 const secs = audioDuration(final);
 console.log(`\n✔ ${final}  (${Math.floor(secs / 60)}:${String(Math.round(secs % 60)).padStart(2, "0")})`);

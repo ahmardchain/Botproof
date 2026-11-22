@@ -1,0 +1,28 @@
+{
+  "title": "BotProof demo, rendered from the screenshots committed in docs/screenshots",
+  "segments": [
+    { "id": "01-problem", "seconds": 23.68, "visuals": [
+      { "type": "title", "title": "BotProof", "subtitle": "Your bot works on your laptop. BotProof proves it works in Telegram." },
+      { "type": "bullets", "title": "Telegram bots are tested by hand", "items": ["/start → tap → scroll → type → repeat after every change", "Unit tests mock the Bot API: they never see what a user sees", "Dead buttons · keyboards that never go away · group-only bugs"] } ] },
+    { "id": "02-what", "seconds": 20.64, "visuals": [
+      { "type": "code", "title": "A flow is plain English (Kane _test.md)", "file": "botproof/flows/private/menu_pagination_test.md", "from": "# " },
+      { "type": "bullets", "title": "BotProof = Kane CLI + real Telegram Web", "items": ["Kane drives Telegram Web K in Chrome, logged in as a dedicated test account", "Each flow runs on a fresh copy of the logged-in profile, Kane attached over CDP", "PASS / FAIL per flow + a sealed Kane evidence pack"] } ] },
+    { "id": "03-private", "seconds": 21.04, "visuals": [
+      { "type": "image", "file": "docs/screenshots/3-inline-menu-edit.png", "label": "/start main menu · inline menu page 1/2 · edited in place (PASS)", "weight": 4 },
+      { "type": "bullets", "title": "Passing live in Telegram Web", "items": ["start · main_menu · menu_pagination · item_details", "conversation_cancel (name → phone → cancel mid-way)", "Each with a sealed Kane evidence pack"] } ] },
+    { "id": "04-group-channel", "seconds": 16.64, "visuals": [
+      { "type": "image", "file": "docs/screenshots/4-group-order.png", "label": "group_order · the bot edits the order with who tapped (PASS)", "weight": 3 },
+      { "type": "image", "file": "docs/screenshots/5-channel-post.png", "label": "channel · today's special with 👍 / 👎 votes (PASS)", "weight": 3 } ] },
+    { "id": "05-bug-loop", "seconds": 47.92, "visuals": [
+      { "type": "bullets", "title": "A real bug, caught on 22 Nov (not staged)", "items": ["Test account posts as an anonymous group admin", "/close → “⛔ Only group admins can close the order”", "…to the group's own owner"] },
+      { "type": "image", "file": "docs/screenshots/1-bug-close-refused.png", "label": "group_close_admin · FAIL · the owner's /close is refused", "weight": 3.5 },
+      { "type": "bullets", "title": "botproof fix → brief for Claude Code", "items": ["Failing step + Kane's remark + failure screenshot + bot sources", "Editable: demo-bot/** only — flows & BotProof locked (hook + git check)", "Up to 3 attempts, then escalate to a human"] },
+      { "type": "code", "title": "Claude's patch (attempt 1)", "text": "  bot.chatType([\"group\", \"supergroup\"]).command(\"close\", async (ctx) => {\n-    if (!(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {\n+    // An anonymous admin posts as the group itself:\n+    // from is @GroupAnonymousBot, sender_chat is the group.\n+    const anonymousAdmin = ctx.msg.sender_chat?.id === ctx.chat.id;\n+    if (!anonymousAdmin && !(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {" },
+      { "type": "image", "file": "docs/screenshots/2-fix-close-works.png", "label": "after redeploy · group_close_admin · PASS · order closed", "weight": 3.5 },
+      { "type": "code", "title": "botproof/runs/fix-2026-11-22T18-25-38/LOG.md", "file": "botproof/runs/fix-2026-11-22T18-25-38/LOG.md", "from": "## Initial run" } ] },
+    { "id": "06-close", "seconds": 27.68, "visuals": [
+      { "type": "bullets", "title": "…and it knows when not to patch", "items": ["A Telegram tip covered the screen → Claude declined to patch", "Telegram still reconnecting, Kane misclicked → triage: automation → BotProof stopped", "The bot was left untouched both times"] },
+      { "type": "stats" },
+      { "type": "title", "title": "BotProof", "subtitle": "Your bot works on your laptop. BotProof proves it works in Telegram.\ngithub.com/ahmardchain/Botproof" } ] }
+  ]
+}
