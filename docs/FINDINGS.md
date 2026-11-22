@@ -18,6 +18,22 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Fix loop, first live attempt — 22 Nov 2026, 17:54–18:10: correctly refused to patch
+
+`botproof fix --step group_close_admin` (test account set to "Remain anonymous", to reproduce a suspected anonymous-admin
+bug). The reproduction run failed at step 1 "Open the test group" (831 s, 75.1 credits): Kane's remark
+"action_failed: click @ step 2". The screenshot shows Telegram Web's own **"Appearance" tip** covering the screen; Kane's
+triage: *"Appearance tip blocked group-opening click"*, category `automation_bug/state_transition_bug`, confidence 0.96.
+The coding agent read the brief and the screenshot and **declined to patch the bot**: no bot change can fix a Telegram
+overlay, and the skill forbids fake fixes. Follow-ups (22 Nov): `telegram-context.md` now tells Kane to close Telegram
+tips/overlays and wait out "Updating…"; and `botproof fix` now reads Kane's triage itself and stops without calling the
+agent (and without using an attempt) when the triage blames automation or the environment. The anonymous-admin bug is
+still unconfirmed.
+
+**Privacy finding:** that screenshot showed the chat list of a personal Telegram account, not a dedicated test account.
+Evidence packs from these runs must not be published. Nothing personal was committed to git (no share links or packs;
+local Windows paths in run summaries were trimmed to pack file names).
+
 ## Runs 9–16 — 22 Nov 2026, 16:33–17:17: groups and channels (2 of 8 pass)
 
 | Flow | Result | Time | Credits | Kane's remark |

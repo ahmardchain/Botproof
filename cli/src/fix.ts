@@ -111,6 +111,38 @@ function diffSince(s: Snapshot, files: string[]): string {
   return d;
 }
 
+// ---------- was it the bot? ----------
+
+/**
+ * Kane triages every failed step (failure.yaml in the pack). When its triage blames the test
+ * environment or the automation (e.g. a Telegram Web tip overlay blocked a click), patching the bot
+ * cannot help, so the loop must not ask the agent to. Seen 22 Nov: "category: automation_bug".
+ */
+export function environmentFailure(r: FlowResult): string | undefined {
+  if (!r.evidencePath || !existsSync(r.evidencePath)) return undefined;
+  try {
+    const y = extractFailure(r.evidencePath).failureYaml ?? "";
+    const m = /\b(automation_bug|environment[a-z_]*|infra[a-z_]*|flaky[a-z_]*)\b/i.exec(y);
+    return m ? m[1] : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function splitByCause(failed: FlowResult[]) {
+  const bot: FlowResult[] = [];
+  const env: { r: FlowResult; why: string }[] = [];
+  for (const r of failed) {
+    if (r.status !== "failed") env.push({ r, why: r.errorMessage ?? r.status });
+    else {
+      const e = environmentFailure(r);
+      if (e) env.push({ r, why: `Kane's triage: ${e} — ${r.failure?.remark ?? ""}` });
+      else bot.push(r);
+    }
+  }
+  return { bot, env };
+}
+
 // ---------- the brief handed to the agent ----------
 
 export function buildBrief(cfg: BotProofConfig, failures: FlowResult[], runDir: string, attempt: number): string {
@@ -240,10 +272,10 @@ export async function cmdFix(args: FixArgs): Promise<number> {
         L.say(green(`\nAll flows pass. Log: ${L.file}`));
         return 0;
       }
-      const infra = failed.filter((r) => r.status !== "failed");
-      if (infra.length === failed.length) {
-        L.md(`## Result: ⚠️ stopped — Kane errors, not bot failures\n\n${infra.map((r) => `- \`${r.flow}\`: ${r.errorMessage ?? r.status}`).join("\n")}\n\nThe agent was not invoked: these are setup/infrastructure errors (auth, Chrome, timeouts), not bot behaviour.`);
-        L.say(yellow(`\nKane could not run the flows (errors, not test failures). Not asking the agent to patch anything. Log: ${L.file}`));
+      const { bot: botFailures, env } = splitByCause(failed);
+      if (botFailures.length === 0) {
+        L.md(`## Result: ⚠️ stopped — not bot failures\n\n${env.map((e) => `- \`${e.r.flow}\`: ${e.why}`).join("\n")}\n\nThe agent was not invoked: Kane could not run the flow or its triage blamed the test environment, so patching the bot cannot help. No attempt was used.`);
+        L.say(yellow(`\nNot bot failures (setup or test environment). Not asking the agent to patch anything. Log: ${L.file}`));
         return 2;
       }
       if (attempt >= cfg.fix.maxAttempts) {
@@ -255,7 +287,7 @@ export async function cmdFix(args: FixArgs): Promise<number> {
       }
 
       const n = attempt + 1;
-      const brief = buildBrief(cfg, failed.filter((r) => r.status === "failed"), runDir, n);
+      const brief = buildBrief(cfg, botFailures, runDir, n);
       writeFileSync(join(runDir, `attempt-${n}-brief.md`), brief);
       L.say(bold(`\n== Attempt ${n}/${cfg.fix.maxAttempts}: handing ${failed.length} failure(s) to the agent ==`));
       const snap = takeSnapshot();
@@ -333,13 +365,16 @@ export async function cmdFixStep(args: FixArgs): Promise<number> {
     return code;
   };
   if (failed.length === 0) return done(0, `## Result: ✅ all flows pass${st.attempt ? ` after ${st.attempt} attempt(s)` : ""}`);
-  if (failed.every((r) => r.status !== "failed")) return done(2, "## Result: ⚠️ stopped — Kane errors, not bot failures. No patch requested.");
+  const { bot: botFailures, env } = splitByCause(failed);
+  if (botFailures.length === 0) {
+    return done(2, `## Result: ⚠️ stopped — not bot failures\n\n${env.map((e) => `- \`${e.r.flow}\`: ${e.why}`).join("\n")}\n\nNo patch requested and no attempt used: the cause is the test environment, not the bot.`);
+  }
   if (st.attempt >= st.maxAttempts) {
     return done(1, `## Result: 🛑 escalated to a human after ${st.attempt} attempt(s)\n\nStill failing: ${failed.map((r) => "`" + r.flow + "`").join(", ")}`);
   }
   st.attempt += 1;
   st.pending = failed.map((r) => r.flow);
-  const brief = buildBrief(cfg, failed.filter((r) => r.status === "failed"), runDir, st.attempt);
+  const brief = buildBrief(cfg, botFailures, runDir, st.attempt);
   writeFileSync(join(runDir, `attempt-${st.attempt}-brief.md`), brief);
   st.snapshot = takeSnapshot();
   writeFileSync(stateFile, JSON.stringify(st));

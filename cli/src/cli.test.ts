@@ -148,3 +148,15 @@ test("scratch profile: copies the login, skips caches and locks, refuses an empt
   mkdirSync(empty);
   assert.equal(prepareScratchProfile(empty).ok, false);
 });
+
+test("fix loop: Kane triage blaming automation is not a bot failure", async () => {
+  const { environmentFailure } = await import("./fix.js");
+  const dir = mkdtempSync(join(tmpdir(), "bp-env-"));
+  const env = join(dir, "env.evidence");
+  writeFileSync(env, makeZip({ "tests/t/steps/002-a/failure.yaml": Buffer.from("triage:\n  category: automation_bug/state_transition_bug\n  confidence: 0.96") }));
+  const bot = join(dir, "bot.evidence");
+  writeFileSync(bot, makeZip({ "tests/t/steps/003-b/failure.yaml": Buffer.from("error: final verification failed\nexpected: Group order (closed)") }));
+  const base = { flow: "f", status: "failed" as const, exitCode: 1, steps: [] };
+  assert.equal(environmentFailure({ ...base, evidencePath: env }), "automation_bug");
+  assert.equal(environmentFailure({ ...base, evidencePath: bot }), undefined);
+});
