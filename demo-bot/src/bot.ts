@@ -314,7 +314,9 @@ export function createBot(token: string, opts: BotOptions): Bot {
   });
 
   bot.chatType(["group", "supergroup"]).command("close", async (ctx) => {
-    if (!(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {
+    // An anonymous admin posts as the group itself: from is @GroupAnonymousBot, sender_chat is the group.
+    const anonymousAdmin = ctx.msg.sender_chat?.id === ctx.chat.id;
+    if (!anonymousAdmin && !(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {
       return ctx.reply("⛔ Only group admins can close the order.", { reply_parameters: { message_id: ctx.msg.message_id } });
     }
     const msgId = await store.get<number>(goLatestKey(ctx.chat.id));
