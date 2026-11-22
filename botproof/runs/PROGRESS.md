@@ -14,3 +14,5 @@
 | 2026-11-22 21:42 | botproof/flows/private/item_details_test.md | passed | 402s | 80.0 | `b3d0caf4-d30c-4db1-b3d8-420a93f9305b.evidence` |  |
 | 2026-11-22 21:50 | botproof/flows/group/group_order_test.md | passed | 335s | 80.2 | `91eea916-6c38-4e74-91d0-409daf80b98e.evidence` |  |
 | 2026-11-22 22:08 | botproof/flows/group/group_close_admin_test.md | passed | 374s | 51.0 | `55946049-5b1d-4529-8145-8108d23d49f6.evidence` |  |
+| 2026-11-22 22:26 | botproof/flows/private/miniapp_checkout_test.md | failed | 670s | 93.0 | `1939899b-a9a0-4d2c-9c45-767dafb859ad.evidence` | step 4 "Open the Mini App": Final verification failed: "A Mini App titled "Brew Bot Checkout" opens inside Telegram showing Drink "Latte" and quantity 2." |
+| 2026-11-22 22:51 | botproof/flows/private/miniapp_checkout_test.md | passed | 1192s | 120.9 | `8e67fd7d-3364-4fb6-8e08-0cba90fd027d.evidence` |  |
