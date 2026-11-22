@@ -8,8 +8,8 @@ BotProof runs plain-English test flows against your Telegram bot in the real Tel
 [Demo video](#) _(coming)_ · [Demo bot](#demo-bot) · [Evidence packs](#evidence-packs) · [Install](#install-and-run)
 
 > **Status (22 Nov 2026):** the CLI, the demo bot, 22 flows and the fix loop are built and unit-tested. The first
-> live Kane run against Telegram Web (the spike) has **not run yet**; see [docs/FINDINGS.md](docs/FINDINGS.md).
-> Until it does, no flow below is marked as passing.
+> live Kane run passed on 22 Nov (`start`: Kane in real Telegram Web, logged in as the test account); the rest of the
+> spike is in progress, see [docs/FINDINGS.md](docs/FINDINGS.md). A flow is marked passing only with its evidence pack.
 
 <!-- GIF: Kane tapping through Brew Bot in Telegram Web (added after the first green run) -->
 
