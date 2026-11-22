@@ -13,6 +13,18 @@ BotProof runs plain-English test flows against your Telegram bot in the real Tel
 
 <!-- GIF: Kane tapping through Brew Bot in Telegram Web (added after the first green run) -->
 
+## What Kane saw (real screenshots)
+
+Taken by Kane in Telegram Web during the runs on 22 Nov (cropped to the chat pane; the test account's chat list is left out).
+
+| The bug: the anonymous owner's `/close` is refused | After Claude's fix: the order closes |
+|---|---|
+| <img src="docs/screenshots/1-bug-close-refused.png" width="380"> | <img src="docs/screenshots/2-fix-close-works.png" width="380"> |
+
+| Inline menu, edited in place | Group order with who tapped | Channel post with vote buttons |
+|---|---|---|
+| <img src="docs/screenshots/3-inline-menu-edit.png" width="250"> | <img src="docs/screenshots/4-group-order.png" width="250"> | <img src="docs/screenshots/5-channel-post.png" width="250"> |
+
 ## The problem
 
 Telegram bots are tested by hand: open Telegram, send `/start`, tap a button, scroll, repeat after every change.

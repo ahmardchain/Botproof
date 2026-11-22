@@ -23,8 +23,8 @@ function packsFromRun(runDir: string): { flow: string; pack: string; status: str
     const j = JSON.parse(readFileSync(f, "utf8")) as { results: { flow: string; status: string; evidencePath?: string }[] };
     return j.results.filter((r) => r.evidencePath).map((r) => ({ flow: r.flow, status: r.status, pack: r.evidencePath! }));
   }
-  // Committed logs only keep the pack's file name.
-  const md = readFileSync(join(runDir, "SUMMARY.md"), "utf8");
+  // Committed logs only keep the pack's file name. Run folders have SUMMARY.md, fix-loop folders LOG.md.
+  const md = ["SUMMARY.md", "LOG.md"].filter((f) => existsSync(join(runDir, f))).map((f) => readFileSync(join(runDir, f), "utf8")).join("\n");
   return [...md.matchAll(/^\| ([^|]+) \| (\w+) \|.*?`([^`]+\.evidence)`/gm)].map((m) => ({ flow: m[1].trim(), status: m[2], pack: m[3] }));
 }
 
