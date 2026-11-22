@@ -19,7 +19,12 @@ const ffmpeg = process.env.FFMPEG || "ffmpeg";
 const out = join(here, "..", "out");
 mkdirSync(out, { recursive: true });
 
-const ORDER = ["01-problem", "02-what", "03-private", "04-group-channel", "05-bug-loop", "05b-install", "06-close"];
+// The Mini App scene is included when its two screenshots are in docs/screenshots and its narration exists.
+const shots = join(here, "..", "..", "..", "docs", "screenshots");
+const withMini = ["6-miniapp-open.png", "7-miniapp-paid.png"].every((f) => existsSync(join(shots, f)));
+const ORDER = ["01-problem", "02-what", "03-private", ...(withMini ? ["03b-miniapp"] : []), "04-group-channel", "05-bug-loop", "05b-install", "06-close"];
+const SCENES = ["s0", "s1", "s2", "s3", ...(withMini ? ["sM"] : []), "s4", "s5", "s6", "s7"];
+console.log(withMini ? "Mini App scene: included" : "Mini App scene: skipped (screenshots not in docs/screenshots)");
 const findVo = (id) => ["wav", "m4a", "mp3"].map((e) => join(voDir, `${id}.${e}`)).find(existsSync);
 const dur = (f) => {
   const m = /Duration: (\d+):(\d+):([\d.]+)/.exec(spawnSync(ffmpeg, ["-hide_banner", "-i", f], { encoding: "utf8" }).stderr);
@@ -37,7 +42,7 @@ console.log(`scenes: ${D.map((d) => d.toFixed(1)).join(" + ")} = ${total.toFixed
 
 const browser = await chromium.launch();
 const page = await browser.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
-await page.addInitScript((d) => (window.DUR = d), D);
+await page.addInitScript(([d, sc]) => { window.DUR = d; window.SCENES = sc; }, [D, SCENES]);
 await page.goto(pathToFileURL(join(here, "film.html")).href);
 await page.waitForFunction(() => [...document.images].every((i) => i.complete && i.naturalWidth > 0));
 

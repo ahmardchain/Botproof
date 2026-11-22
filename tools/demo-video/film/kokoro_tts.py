@@ -16,7 +16,7 @@ out = sys.argv[1] if len(sys.argv) > 1 else os.path.join(here, "..", "audio")
 os.makedirs(out, exist_ok=True)
 k = Kokoro(os.environ.get("KOKORO_MODEL", "kokoro-v1.0.onnx"), os.environ.get("KOKORO_VOICES", "voices-v1.0.bin"))
 segments = json.load(open(os.path.join(here, "..", "narration.json")))["segments"]
-for sid in ["01-problem", "02-what", "03-private", "04-group-channel", "05-bug-loop", "05b-install", "06-close"]:
+for sid in ["01-problem", "02-what", "03-private", "03b-miniapp", "04-group-channel", "05-bug-loop", "05b-install", "06-close"]:
     samples, sr = k.create(segments[sid], voice="af_heart", speed=0.92, lang="en-us")
     sf.write(os.path.join(out, f"{sid}.wav"), samples, sr)
     print(sid, round(len(samples) / sr, 2), "s")
