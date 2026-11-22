@@ -18,6 +18,19 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Fix loop, fourth attempt — 22 Nov 2026, 19:11: Kane caught the bug; BotProof mis-routed it (fixed)
+
+Telegram Web was ready before Kane started ("Telegram Web connected after 9s"). Kane completed the group-order steps and
+sent `/close`; the bot refused the owner. Kane's failure record (step 3): *"Close command sent anonymously instead of by the
+admin account"* / *"The exact command was sent, but botproof replied that the sender is not a group admin"*, triage
+`automation_bug/agent_misstep` (0.94) — Kane blamed itself for "Send anonymously", which is the account's admin setting,
+not something it chose. 604 s, 77.2 credits, log `botproof/runs/fix-2026-11-22T18-11-20/LOG.md`.
+
+Two BotProof bugs, fixed the same evening: (1) the run summary kept the *first* failed step from Kane's stream (a step-1
+click that heal recovered) instead of the last one; (2) the fix loop trusted Kane's automation triage even when the record
+says the bot replied wrongly. Now a failure record in which the bot visibly answered goes to the agent, with Kane's triage
+included in the brief for the agent to weigh.
+
 ## Fix loop, third attempt — 22 Nov 2026, 18:58: Telegram was still syncing when Kane started
 
 Manual check on the master profile right before: connected, test message delivered. The fix-loop run then failed at the

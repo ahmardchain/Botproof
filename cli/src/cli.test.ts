@@ -184,3 +184,28 @@ test("Telegram Web state from visible text", async () => {
   assert.equal(classifyTelegramText("Chats\ntestingbotproofgroup\nBrew Bot"), "ready");
   assert.equal(classifyTelegramText(""), "unknown");
 });
+
+test("triage blaming automation is overridden when the bot visibly answered wrongly", async () => {
+  const { environmentFailure, botReplied } = await import("./fix.js");
+  const y = "title: Close command sent anonymously instead of by the admin account\nerror: The exact command was sent, but botproof replied that the sender is not a group admin.\ntriage:\n  category: automation_bug/agent_misstep";
+  assert.ok(botReplied(y));
+  const dir = mkdtempSync(join(tmpdir(), "bp-tri-"));
+  const p = join(dir, "x.evidence");
+  writeFileSync(p, makeZip({ "tests/t/steps/3-c/failure.yaml": Buffer.from(y) }));
+  assert.equal(environmentFailure({ flow: "f", status: "failed", exitCode: 1, steps: [], evidencePath: p }), undefined);
+  assert.ok(!botReplied("category: automation_bug (Appearance tip blocked group-opening click)"));
+});
+
+test("summary keeps the failed step that ended the run", () => {
+  const ev = [
+    { type: "test_md_step_start", step_index: 1, heading: "Open the test group" },
+    { type: "run_end", status: "failed", reason: "action_failed: click @ step 2" },
+    { type: "test_md_step_end", step_index: 1, status: "failed" },
+    { type: "test_md_step_start", step_index: 3, heading: "Close as the group owner" },
+    { type: "run_end", status: "failed", reason: "bot replied the sender is not a group admin" },
+    { type: "test_md_step_end", step_index: 3, status: "failed" },
+  ];
+  const r = summarize("f", ev, 1);
+  assert.equal(r.failure?.stepIndex, 3);
+  assert.match(r.failure!.remark, /not a group admin/);
+});

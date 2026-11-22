@@ -80,7 +80,9 @@ export function summarize(flow: string, events: Ev[], exitCode: number, stderr =
       case "test_md_step_end": {
         const heading = headings.get(e.step_index) ?? `Step ${e.step_index}`;
         steps.push({ index: e.step_index, heading, status: e.status, durationS: e.duration_s });
-        if (e.status === "failed" && !failure) failure = { stepIndex: e.step_index, heading, remark: lastRemark || "Kane reported the step as failed." };
+        // Keep the LAST failed step: with adaptive heal an early step can fail and be recovered,
+        // while the run really ends later (22 Nov: step 1 recovered, run ended at step 3).
+        if (e.status === "failed") failure = { stepIndex: e.step_index, heading, remark: lastRemark || "Kane reported the step as failed." };
         break;
       }
       case "test_md_done":

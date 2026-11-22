@@ -123,10 +123,20 @@ export function environmentFailure(r: FlowResult): string | undefined {
   try {
     const y = extractFailure(r.evidencePath).failureYaml ?? "";
     const m = /\b(automation_bug|environment[a-z_]*|infra[a-z_]*|flaky[a-z_]*)\b/i.exec(y);
-    return m ? m[1] : undefined;
+    if (!m) return undefined;
+    // Kane's triage can blame itself even when its own record shows the bot answering wrongly
+    // (22 Nov: "botproof replied that the sender is not a group admin", triaged agent_misstep).
+    // If the bot visibly replied, that reply is bot behaviour: let the agent judge it.
+    if (botReplied(y)) return undefined;
+    return m[1];
   } catch {
     return undefined;
   }
+}
+
+/** True when a failure record says the bot itself answered (replied/refused/rejected/said …). */
+export function botReplied(failureYaml: string): boolean {
+  return /\b(bot|botproof\w*|brew ?bot)\b[^.\n]{0,60}\b(replied|responded|answered|refused|rejected|said|denied)\b/i.test(failureYaml);
 }
 
 function splitByCause(failed: FlowResult[]) {
