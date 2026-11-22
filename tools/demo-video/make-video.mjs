@@ -221,6 +221,10 @@ if (process.argv.includes("--audio-only")) {
 }
 const segFiles = [];
 for (const seg of story.segments) {
+  if (seg.requires && !newestPack(seg.requires.flow, seg.requires.status ?? "passed")) {
+    console.log(`– ${seg.id} skipped: no ${seg.requires.status ?? "passed"} run of ${seg.requires.flow} yet`);
+    continue;
+  }
   console.log(`▶ ${seg.id}`);
   const audio = noAudio ? undefined : await ensureAudio(seg.id);
   const frames = seg.visuals.flatMap(visual);

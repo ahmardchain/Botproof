@@ -70,6 +70,27 @@
       ]
     },
     {
+      "id": "03b-miniapp",
+      "requires": {
+        "flow": "miniapp_checkout",
+        "status": "passed"
+      },
+      "visuals": [
+        {
+          "type": "recording",
+          "flow": "miniapp_checkout",
+          "label": "miniapp_checkout_test.md · Mini App inside Telegram, Pay with Telegram's button",
+          "weight": 6
+        },
+        {
+          "type": "pack",
+          "flow": "miniapp_checkout",
+          "label": "miniapp_checkout_test.md · PASS · payment confirmed in chat",
+          "max": 4
+        }
+      ]
+    },
+    {
       "id": "04-group-channel",
       "visuals": [
         {
