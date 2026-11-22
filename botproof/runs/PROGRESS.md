@@ -9,3 +9,7 @@
 | 2026-11-22 21:15 | botproof/flows/private/start_test.md | error | – | – | – | error: failed to start: connect_over_cdp: connect ECONNREFUSED 127.0.0.1:59174 |
 | 2026-11-22 21:16 | botproof/flows/channel/channel_comments_test.md | error | – | – | – | error: Chrome launch failed: fetch failed |
 | 2026-11-22 21:17 | botproof/flows/private/menu_pagination_test.md | error | – | – | – | error: Chrome launch failed: fetch failed |
+| 2026-11-22 21:24 | botproof/flows/private/start_test.md | failed | 292s | 0.8 | `1a2600d1-efed-4ed5-933b-bc842eadb6ec.evidence` | step 2 "Reset any order in progress": AP produced no action for 3 consecutive steps |
+| 2026-11-22 21:33 | botproof/flows/private/menu_pagination_test.md | passed | 365s | 60.5 | `34773f18-adfa-4bd4-8f46-5bf91537fad6.evidence` |  |
+| 2026-11-22 21:42 | botproof/flows/private/item_details_test.md | passed | 402s | 80.0 | `b3d0caf4-d30c-4db1-b3d8-420a93f9305b.evidence` |  |
+| 2026-11-22 21:50 | botproof/flows/group/group_order_test.md | passed | 335s | 80.2 | `91eea916-6c38-4e74-91d0-409daf80b98e.evidence` |  |
