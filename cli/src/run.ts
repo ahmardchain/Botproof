@@ -1,4 +1,4 @@
-import { mkdirSync, writeFileSync } from "node:fs";
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { discoverFlows, selectFlows, type Flow } from "./flows.js";
@@ -31,6 +31,15 @@ export function resolveFlows(cfg: BotProofConfig, names: string[], tags: string[
  * testrun gives every worker a fresh temporary Chrome profile (docs/user-guide/testrun.md),
  * which would drop the logged-in Telegram Web session. See docs/FINDINGS.md.
  */
+/** Append one finished flow to botproof/runs/PROGRESS.md at once, so a killed batch loses nothing. */
+function recordProgress(r: FlowResult) {
+  const p = join("botproof", "runs", "PROGRESS.md");
+  mkdirSync(join("botproof", "runs"), { recursive: true });
+  if (!existsSync(p)) writeFileSync(p, "# Every finished flow, in order (written as each flow ends)\n\n| When | Flow | Result | Time | Credits | Evidence pack | Failure |\n|---|---|---|---|---|---|---|\n");
+  const row = resultsMarkdown([r]).split("\n").at(-1)!;
+  appendFileSync(p, `| ${new Date().toISOString().slice(0, 16).replace("T", " ")} ${row}\n`);
+}
+
 export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean; record?: boolean } = {}): Promise<FlowResult[]> {
   const variablesFile = writeVariablesFile(cfg);
   const results: FlowResult[] = [];
@@ -44,6 +53,7 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
     if (!prof.ok) {
       const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: prof.reason };
       printResult(r);
+      recordProgress(r);
       results.push(r);
       continue;
     }
@@ -54,6 +64,7 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
     } catch (e) {
       const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: (e as Error).message };
       printResult(r);
+      recordProgress(r);
       results.push(r);
       continue;
     }
@@ -63,6 +74,7 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
       await chrome.stop();
       const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: `Telegram Web shows the login screen in the profile copy: log the test account into ${cfg.chromeProfile} again. Kane was not started (no credits used).` };
       printResult(r);
+      recordProgress(r);
       results.push(r);
       continue;
     }
@@ -86,7 +98,8 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
       console.log(red(`        Kane left the run's Chrome profile empty (the master login is untouched).`));
     }
     printResult(r);
-    results.push(r);
+    recordProgress(r);
+      results.push(r);
   }
   return results;
 }

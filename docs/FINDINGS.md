@@ -18,6 +18,22 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## 13-flow batch — 22 Nov 2026, 20:43–21:15: 2 more pass, then killed for memory
+
+| Flow | Result | Time | Credits | Cause |
+|---|---|---|---|---|
+| `group_menu` | **PASS** | 204 s | 47.0 | (navigation via `#@group_username`) |
+| `conversation_cancel` | **PASS** | 460 s | 120.3 | |
+| `channel_comments` | FAIL step 4 | 206 s | 41.2 | Kane posted the comment as a normal message, not inside the post's comment thread (the anonymous-comment bot fix was therefore not exercised) |
+| `channel_special_vote` | FAIL step 3 | 155 s | 24.7 | Kane opened the discussion group instead of the channel |
+| `group_privacy` | FAIL step 4 | 476 s | 104.4 | Kane again could not open Telegram's Reply menu ("agent is stuck") |
+| `conversation` | killed | | | the developer machine (8 GB) ran out of memory; the batch never wrote its log |
+
+Follow-ups (22 Nov): every finished flow is now appended to `botproof/runs/PROGRESS.md` the moment it ends, so a killed
+batch keeps its results; the channel flows now say how to tell the channel ("subscribers", no message box) from its
+discussion group and that the comment goes inside the post's comment view; the reply step of `group_privacy` is marked
+`optional` (listed in README Limits). Long batches are now run one flow per command.
+
 ## Group/channel batch — 22 Nov 2026, 20:05–20:33: 4 flows fail, none sent for a patch
 
 `fix --step group_menu group_privacy channel_special_vote channel_comments`: exit 2, 1311 s, 217.0 credits, log
