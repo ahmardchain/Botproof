@@ -18,6 +18,20 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Runs 6–8 — 22 Nov 2026, 16:14–16:29: inline keyboards and the main menu
+
+One flow per command (a two-flow run earlier ran the machine out of memory).
+
+| Flow | Result | Time | Credits | Pack |
+|---|---|---|---|---|
+| `private/menu_pagination_test.md` | **PASS** | 230 s | 80.5 | `84a3ebad-….evidence` |
+| `private/item_details_test.md` | **PASS** | 63 s | 0 (pure replay from cache) | `743a9c56-….evidence` |
+| `private/main_menu_test.md` | **PASS** | 391 s | 123.5 | `80c38596-….evidence` |
+
+**Q2 answered: yes.** Kane tapped inline buttons, saw Next/Prev edit the same message, opened item details in place,
+followed the URL button and read the callback alert. `item_details` replayed entirely from the recording made during the
+interrupted run, at no credit cost: a recorded flow re-runs for free. Credits used so far on 22 Nov: about 380.
+
 ## Runs 4–5 — 22 Nov 2026, 15:22–15:41: CDP fix works, twice in a row
 
 | Flow | Result | Time | Credits | New `kane-clean-*` temp profile? |
@@ -94,10 +108,10 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 | # | Question | Result | Evidence |
 |---|---|---|---|
 | 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES, when BotProof owns Chrome** (master profile copy + `--cdp-endpoint`): 2 consecutive passes. When Kane launched Chrome itself it used a blank temp profile or emptied the given one | runs of 22 Nov 15:22 and 15:32 |
-| 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **Chat + /start + reply: YES**; button + edit pending | `start_test.md` PASS; next `menu_pagination_test.md` |
+| 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **YES** | `start`, `menu_pagination`, `item_details`, `main_menu` PASS (22 Nov) |
 | 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
 | 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **NOT RUN** | flows ready: `group_order_test.md`, `channel_special_vote_test.md` |
-| 5 | Headless works? Time and credits per flow | **Authoring 600 s / 66.4 credits; replay 311 s / 9.68 credits** (start flow, replay incl. a failed heal); headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
+| 5 | Headless works? Time and credits per flow | Authoring 230–600 s / 56–124 credits per flow; a full cached replay 63 s / 0 credits; headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
 
 How to run it (about 30 minutes, uses a few dozen credits):
 

@@ -34,12 +34,12 @@ Telegram is a third-party login we can't hand over, so per the rules' fallback c
 
 ## What BotProof tests
 
-Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. "Pack" links are added when a run passes.
+Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. ✅ = passed live (run logs in [`botproof/runs/`](botproof/runs/)); pack links are added when the evidence packs are published.
 
 | Area | What is checked | Flow | Pack |
 |---|---|---|---|
-| Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) · [main_menu](botproof/flows/private/main_menu_test.md) · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) | – |
-| Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) · [item_details](botproof/flows/private/item_details_test.md) | – |
+| Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) ✅ · [main_menu](botproof/flows/private/main_menu_test.md) ✅ · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) | pending upload |
+| Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) ✅ · [item_details](botproof/flows/private/item_details_test.md) ✅ | pending upload |
 | Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) | – |
 | Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) | – |
 | Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) | – |
