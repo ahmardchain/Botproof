@@ -17,3 +17,4 @@ chrome-profile/
 botproof/runs/**/*.png
 botproof/.fix-*
 botproof/variables.json
+botproof/runs/**/results.json
