@@ -1,0 +1,20 @@
+{
+  "name": "botproof",
+  "version": "0.1.0",
+  "description": "End-to-end tests for Telegram bots: Kane CLI drives real Telegram Web, a coding agent fixes what fails.",
+  "type": "module",
+  "license": "MIT",
+  "bin": { "botproof": "cli/dist/index.js" },
+  "files": ["cli/dist", "cli/templates"],
+  "engines": { "node": ">=20" },
+  "scripts": {
+    "build": "tsc -p cli/tsconfig.json",
+    "prepare": "npm run build",
+    "test": "npm run build && node --test cli/dist/*.test.js",
+    "typecheck": "tsc -p cli/tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "typescript": "5.9.3"
+  }
+}

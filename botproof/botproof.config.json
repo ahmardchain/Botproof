@@ -1,0 +1,21 @@
+{
+  "flowsDir": "botproof/flows",
+  "chromeProfile": "~/.botproof/chrome-profile",
+  "telegramWeb": "https://web.telegram.org/k/",
+  "variables": {
+    "bot_username": "REPLACE_with_your_bot_username",
+    "group_link": "https://t.me/REPLACE_test_group",
+    "channel_link": "https://t.me/REPLACE_test_channel",
+    "discussion_link": "https://t.me/REPLACE_test_channel_chat",
+    "customer_name": "Ada",
+    "customer_phone": "+2348012345678"
+  },
+  "headless": false,
+  "fix": {
+    "maxAttempts": 3,
+    "editable": ["demo-bot/src/**", "demo-bot/api/**", "demo-bot/public/**"],
+    "sources": ["demo-bot/src/bot.ts", "demo-bot/src/menu.ts", "demo-bot/public/checkout.html"],
+    "agentCommand": "claude -p --permission-mode acceptEdits --allowedTools Read,Edit,Write,Glob,Grep",
+    "botCommand": "npm --prefix demo-bot run dev"
+  }
+}

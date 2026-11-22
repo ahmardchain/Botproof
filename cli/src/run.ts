@@ -1,0 +1,79 @@
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
+import { discoverFlows, selectFlows, type Flow } from "./flows.js";
+import { kaneAvailable, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
+import { bold, dim, printResult, printSummary, resultsMarkdown } from "./report.js";
+
+export interface RunArgs {
+  names: string[];
+  tags: string[];
+  headless?: boolean;
+  merge?: boolean;
+  verbose?: boolean;
+}
+
+export function newRunId(prefix = "run"): string {
+  return `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
+}
+
+export function resolveFlows(cfg: BotProofConfig, names: string[], tags: string[]): Flow[] {
+  const flows = selectFlows(discoverFlows(cfg.flowsDir), names, tags);
+  if (flows.length === 0) throw new Error(`No flows match${names.length ? ` ${names.join(", ")}` : ""}${tags.length ? ` tags ${tags.join(", ")}` : ""} in ${cfg.flowsDir}.`);
+  return flows;
+}
+
+/**
+ * Flows run one at a time with `kane-cli testmd run`, not `kane-cli testrun run`:
+ * testrun gives every worker a fresh temporary Chrome profile (docs/user-guide/testrun.md),
+ * which would drop the logged-in Telegram Web session. See docs/FINDINGS.md.
+ */
+export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean } = {}): Promise<FlowResult[]> {
+  const variablesFile = writeVariablesFile(cfg);
+  const results: FlowResult[] = [];
+  for (const f of flows) {
+    console.log(dim(`▶ ${f.path}  [${f.tags.join(", ")}]`));
+    const r = await runFlow(f.path, {
+      headless: opts.headless ?? cfg.headless,
+      variablesFile,
+      timeout: cfg.stepTimeout,
+      onEvent: (e) => {
+        if (e.type === "test_md_step_start") console.log(dim(`    · ${e.heading}`));
+        else if (opts.verbose && e.type === undefined && e.remark) console.log(dim(`      ${e.status}: ${e.remark}`));
+      },
+    });
+    printResult(r);
+    results.push(r);
+  }
+  return results;
+}
+
+export async function cmdRun(args: RunArgs): Promise<number> {
+  const k = kaneAvailable();
+  if (!k.ok) {
+    console.error("kane-cli not found. Install it: npm install -g @testmuai/kane-cli");
+    return 2;
+  }
+  const cfg = loadConfig();
+  const flows = resolveFlows(cfg, args.names, args.tags);
+  const runId = newRunId();
+  console.log(bold(`BotProof · ${flows.length} flow(s) · kane-cli ${k.version} · ${cfg.telegramWeb}`));
+  const results = await runFlows(cfg, flows, args);
+  printSummary(results);
+
+  const dir = join("botproof", "runs", runId);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "results.json"), JSON.stringify({ runId, kane: k.version, results }, null, 2));
+  writeFileSync(join(dir, "SUMMARY.md"), `# ${runId}\n\n${resultsMarkdown(results)}\n`);
+  if (args.merge) {
+    const packs = results.map((r) => r.evidencePath).filter((p): p is string => !!p);
+    if (packs.length > 1) {
+      const out = join(".testmuai", "evidence", `${runId}.evidence`);
+      const m = mergeEvidence(packs, runId, out);
+      console.log(m.ok ? `merged evidence pack: ${out}` : `evidence merge failed: ${m.output}`);
+    }
+  }
+  console.log(dim(`run log: ${dir}/SUMMARY.md`));
+  if (results.every((r) => r.status === "passed")) return 0;
+  return results.some((r) => r.status === "failed") ? 1 : 2;
+}

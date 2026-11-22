@@ -1,0 +1,8 @@
+{
+  "bot_username": { "value": "brewbot_botproof_bot" },
+  "group_link": { "value": "https://t.me/botproof_test_group" },
+  "channel_link": { "value": "https://t.me/botproof_specials" },
+  "discussion_link": { "value": "https://t.me/botproof_specials_chat" },
+  "customer_name": { "value": "Ada" },
+  "customer_phone": { "value": "+2348012345678" }
+}

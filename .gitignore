@@ -14,5 +14,6 @@ dist/
 chrome-profile/
 **/chrome-profiles/
 # BotProof local run logs may include screenshots paths from the test account
-botproof/runs/
-botproof/.local.json
+botproof/runs/**/*.png
+botproof/.fix-*
+botproof/variables.json
