@@ -18,6 +18,14 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Fix loop, fifth attempt — 22 Nov 2026, 19:25–19:39: first full closed loop ✅
+
+`fix --step group_close_admin` → exit 10 (step 3: "the bot replied that only group admins can close the order"; 374 s,
+71.6 credits) → Claude Code patched `demo-bot/src/bot.ts` (anonymous admin = `sender_chat.id === chat.id`), no edits outside
+the allowlist → BotProof redeployed with `vercel deploy --prod` (upload checked: only `demo-bot/` + root package files) →
+Kane re-ran → PASS (185 s, 20.4 credits) → exit 0. Log `botproof/runs/fix-2026-11-22T18-25-38/LOG.md`, fix `80593e8`,
+written up in `docs/caught.md` #1. Credits used on 22 Nov so far: about 1,250.
+
 ## Fix loop, fourth attempt — 22 Nov 2026, 19:11: Kane caught the bug; BotProof mis-routed it (fixed)
 
 Telegram Web was ready before Kane started ("Telegram Web connected after 9s"). Kane completed the group-order steps and

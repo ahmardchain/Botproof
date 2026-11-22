@@ -46,8 +46,8 @@ Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. �
 | Media | order photo arrives with the right caption and order number | [conversation](botproof/flows/private/conversation_test.md) | – |
 | Mini App | opens inside Telegram, form + Telegram main button work, data reaches the bot | [miniapp_checkout](botproof/flows/private/miniapp_checkout_test.md) | – |
 | Menu button | opens the Mini App; paying from it reaches the bot | [menu_button](botproof/flows/private/menu_button_test.md) | – |
-| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) · [group_order](botproof/flows/group/group_order_test.md) · [group_close_admin](botproof/flows/group/group_close_admin_test.md) · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) | – |
-| Channels | posts "today's special"; 👍/👎 votes edit the post; bot edits and deletes its post; comments in the discussion group reach the bot | [channel_special_vote](botproof/flows/channel/channel_special_vote_test.md) · [channel_edit_delete](botproof/flows/channel/channel_edit_delete_test.md) · [channel_comments](botproof/flows/channel/channel_comments_test.md) | – |
+| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) · [group_order](botproof/flows/group/group_order_test.md) ✅ · [group_close_admin](botproof/flows/group/group_close_admin_test.md) ✅ · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) | – |
+| Channels | posts "today's special"; 👍/👎 votes edit the post; bot edits and deletes its post; comments in the discussion group reach the bot | [channel_special_vote](botproof/flows/channel/channel_special_vote_test.md) · [channel_edit_delete](botproof/flows/channel/channel_edit_delete_test.md) ✅ · [channel_comments](botproof/flows/channel/channel_comments_test.md) | – |
 | Stretch | inline mode; stale buttons after cancel | [inline_mode](botproof/flows/stretch/inline_mode_test.md) · [stale_button](botproof/flows/stretch/stale_button_test.md) | – |
 
 Not built: tests that need a second Telegram account (new-member welcome, non-admin `/close` refusal, "only A can tap A's
@@ -81,11 +81,34 @@ buttons"). They are possible with a second Chrome profile but were left out to k
 - Two ways to drive it: `botproof fix` runs the agent itself (`claude -p …`); inside Claude Code, `/botproof-fix` uses the
   [skill](.claude/skills/botproof/SKILL.md) and `botproof fix --step`, one attempt per call.
 
-_A real run log goes here after the first live fix._
+**A real run** ([full log](botproof/runs/fix-2026-11-22T18-25-38/LOG.md), 22 Nov): Kane found that the bot refuses
+`/close` from an anonymous group admin. Claude Code patched one condition, BotProof redeployed to Vercel, Kane passed.
+
+| Step | What happened |
+|---|---|
+| Kane run | `group_close_admin` **failed** at step 3 "Close as the group owner": *"the bot replied that only group admins can close the order"* (374 s, 71.6 credits) |
+| Brief → agent | flow, Kane's remark, failure record and screenshot handed to Claude Code |
+| Patch (attempt 1) | `demo-bot/src/bot.ts` only; no edits outside the allowlist |
+| Redeploy | `vercel deploy --prod` (only `demo-bot/` uploaded) |
+| Kane re-run | **passed** (185 s, 20.4 credits) → loop ends, exit 0 |
+
+```diff
+   bot.chatType(["group", "supergroup"]).command("close", async (ctx) => {
+-    if (!(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {
++    // An anonymous admin posts as the group itself: from is @GroupAnonymousBot, sender_chat is the group.
++    const anonymousAdmin = ctx.msg.sender_chat?.id === ctx.chat.id;
++    if (!anonymousAdmin && !(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {
+```
+
+The loop also refuses to patch when the bot isn't at fault: in an earlier attempt a Telegram Web tip covered the screen,
+Kane's triage blamed the automation, and BotProof stopped without asking the agent (see [FINDINGS](docs/FINDINGS.md)).
 
 ## Bugs Kane caught
 
-See [docs/caught.md](docs/caught.md). Only bugs Kane actually caught while building the demo bot are listed; none yet.
+See [docs/caught.md](docs/caught.md). Only bugs Kane actually caught while building the demo bot are listed.
+
+1. **Anonymous group admins couldn't close a group order**: the bot answered "Only group admins" to the group's own owner.
+   Caught by `group_close_admin`, fixed by the loop in [`80593e8`](https://github.com/ahmardchain/Botproof/commit/80593e8).
 
 ## Demo bot
 

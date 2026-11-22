@@ -18,3 +18,7 @@ botproof/runs/**/*.png
 botproof/.fix-*
 botproof/variables.json
 botproof/runs/**/results.json
+
+# Vercel CLI link and its OIDC token file
+.env*
+!.env.example
