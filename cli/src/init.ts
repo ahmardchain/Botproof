@@ -5,6 +5,7 @@ import { join, resolve, sep } from "node:path";
 import { CONFIG_PATH, DEFAULT_CONFIG, expandHome, loadConfig, saveConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { kaneAvailable, kaneSync } from "./kane.js";
 import { discoverFlows } from "./flows.js";
+import { findChrome } from "./chrome.js";
 
 const CONTEXT_PATH = "botproof/telegram-context.md";
 const TELEGRAM_CONTEXT = `# Telegram Web (K) — notes for the test agent
@@ -46,18 +47,6 @@ Type /start in the message box and press Enter.
 Verify that a new message from the bot appears below the /start message and contains the text "Welcome".
 `;
 
-export function findChrome(): string | undefined {
-  const candidates = [
-    process.env.KANE_CLI_CHROME_PATH,
-    "/usr/bin/google-chrome",
-    "/usr/bin/google-chrome-stable",
-    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Google", "Chrome", "Application", "chrome.exe"),
-    "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-    "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
-  ].filter(Boolean) as string[];
-  return candidates.find((p) => existsSync(p));
-}
 
 function check(ok: boolean, label: string, hint?: string) {
   console.log(`${ok ? green("✔") : red("✘")} ${label}${!ok && hint ? `\n    ${yellow(hint)}` : ""}`);
@@ -105,7 +94,7 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     existing.chromeProfile = profile;
     if (kane.ok) {
       const r = kaneSync(["config", "chrome-profile", profile]);
-      check(r.status === 0, `Chrome profile set (BotProof runs Kane on a fresh copy of it per flow)`, (r.stderr || r.stdout).trim());
+      check(r.status === 0, `Chrome profile ready (each flow runs on a fresh copy, in a Chrome BotProof starts and Kane attaches to)`, (r.stderr || r.stdout).trim());
     }
 
     // 3. Log the test account into Telegram Web inside that profile

@@ -120,6 +120,8 @@ function lastStderrLine(stderr: string): string | undefined {
 
 export interface RunOptions {
   headless?: boolean;
+  /** Attach Kane to a Chrome BotProof started (kane-cli testmd run --cdp-endpoint). */
+  cdpEndpoint?: string;
   variablesFile?: string;
   timeout?: number;
   onEvent?: (e: Ev) => void;
@@ -148,7 +150,8 @@ export function kaneAvailable(): { ok: boolean; version?: string } {
 /** Run one flow: `kane-cli testmd run <file> --agent [--headless] [--variables-file f] [--timeout s]`. */
 export function runFlow(flowPath: string, opts: RunOptions = {}, cwd = process.cwd()): Promise<FlowResult> {
   const args = ["testmd", "run", flowPath, "--agent"];
-  if (opts.headless) args.push("--headless");
+  if (opts.cdpEndpoint) args.push("--cdp-endpoint", opts.cdpEndpoint);
+  else if (opts.headless) args.push("--headless");
   if (opts.variablesFile) args.push("--variables-file", opts.variablesFile);
   if (opts.timeout) args.push("--timeout", String(opts.timeout));
   const started = Date.now();
