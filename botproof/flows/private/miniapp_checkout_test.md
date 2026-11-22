@@ -15,7 +15,7 @@ Open https://web.telegram.org/k/#@{{bot_username}} and wait until the chat with 
 Type /cancel in the message box and press Enter. Verify the bot replies with a message containing "Order cancelled".
 
 ## Confirm an order
-Type /menu and press Enter. Click "🥛 Latte · $4.50", then "➕ Add Latte", close the alert with OK, click "2", type {{customer_name}} and press Enter, type {{customer_phone}} and press Enter, then click "✅ Confirm". Verify the bot says "Tap 💳 Checkout below to pay $9.00."
+Type /menu and press Enter. Click "🥛 Latte · $4.50", then "➕ Add Latte", close the alert with OK, click "2", type {{customer_name}} and press Enter, type {{customer_phone}} and press Enter, then click "✅ Confirm". Verify the bot replies that you can pay $9.00 with Checkout (its message reads like "Tap Checkout below to pay $9.00"; the word Checkout may be bold and have a card emoji before it), and that a "Checkout" button is shown below the message box.
 
 ## Open the Mini App
 Click the "💳 Checkout" button on the custom keyboard below the message input. Verify a Mini App titled "Brew Bot Checkout" opens inside Telegram showing Drink "Latte" and quantity 2.

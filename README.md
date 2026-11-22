@@ -54,7 +54,7 @@ Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. �
 | Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) ✅ · [item_details](botproof/flows/private/item_details_test.md) ✅ | pending upload |
 | Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) | – |
 | Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) ✅ | – |
-| Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) | – |
+| Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) ✅ | – |
 | Media | order photo arrives with the right caption and order number | [conversation](botproof/flows/private/conversation_test.md) | – |
 | Mini App | opens inside Telegram, form + Telegram main button work, data reaches the bot | [miniapp_checkout](botproof/flows/private/miniapp_checkout_test.md) | – |
 | Menu button | opens the Mini App; paying from it reaches the bot | [menu_button](botproof/flows/private/menu_button_test.md) | – |
