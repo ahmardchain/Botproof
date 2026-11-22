@@ -138,3 +138,71 @@ export async function launchChrome(opts: { userDataDir: string; headless?: boole
   hookExit();
   return session;
 }
+
+export type TelegramState = "ready" | "logged_out" | "still_syncing" | "unknown";
+
+/**
+ * Before Kane starts: wait until Telegram Web in the BotProof Chrome has finished connecting
+ * and catching up ("Updating…", "Connecting…", "Waiting for network…"), so Kane never clicks an
+ * offline client. Each flow starts from a copy of the master profile, whose sync state is as old as
+ * the master's last use; an account in busy channels can need tens of seconds to catch up (22 Nov:
+ * two fix-loop runs failed with Telegram stuck on "Updating…" and messages pending).
+ * Also detects the login screen, so a logged-out profile fails in seconds instead of costing credits.
+ */
+export async function waitForTelegramReady(endpoint: string, timeoutMs = 90_000): Promise<{ state: TelegramState; waitedMs: number }> {
+  const started = Date.now();
+  let stable = 0;
+  let last: TelegramState = "unknown";
+  while (Date.now() - started < timeoutMs) {
+    const s = await telegramState(endpoint).catch(() => "unknown" as TelegramState);
+    last = s;
+    if (s === "logged_out") {
+      // The login screen can flash while the app boots; require it to persist.
+      stable = stable < 0 ? stable - 1 : -1;
+      if (stable <= -5) return { state: s, waitedMs: Date.now() - started };
+    } else if (s === "ready") {
+      stable = stable > 0 ? stable + 1 : 1;
+      if (stable >= 3) return { state: s, waitedMs: Date.now() - started };
+    } else stable = 0;
+    await new Promise((r) => setTimeout(r, 1000));
+  }
+  return { state: last === "ready" ? "ready" : "still_syncing", waitedMs: Date.now() - started };
+}
+
+async function telegramState(endpoint: string): Promise<TelegramState> {
+  const targets = (await (await fetch(`${endpoint}/json/list`)).json()) as { type: string; url: string; webSocketDebuggerUrl?: string }[];
+  const page = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl) ;
+  if (!page?.webSocketDebuggerUrl) return "unknown";
+  const text = await evaluate(page.webSocketDebuggerUrl, "document.body ? document.body.innerText : ''");
+  return classifyTelegramText(text);
+}
+
+/** Pure: classify Telegram Web K's visible text. */
+export function classifyTelegramText(text: string): TelegramState {
+  if (/Log in to Telegram by QR Code|Log in by phone Number|Scan the QR code|Quick log in using QR/i.test(text)) return "logged_out";
+  if (/Updating…|Updating\.\.\.|Connecting…|Connecting\.\.\.|Waiting for network/i.test(text)) return "still_syncing";
+  if (text.trim().length > 0) return "ready";
+  return "unknown";
+}
+
+function evaluate(wsUrl: string, expression: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const ws = new WebSocket(wsUrl);
+    const timer = setTimeout(() => {
+      ws.close();
+      reject(new Error("CDP evaluate timed out"));
+    }, 5000);
+    ws.onopen = () => ws.send(JSON.stringify({ id: 1, method: "Runtime.evaluate", params: { expression, returnByValue: true } }));
+    ws.onmessage = (ev) => {
+      const msg = JSON.parse(String(ev.data)) as { id?: number; result?: { result?: { value?: unknown } } };
+      if (msg.id !== 1) return;
+      clearTimeout(timer);
+      ws.close();
+      resolve(String(msg.result?.result?.value ?? ""));
+    };
+    ws.onerror = () => {
+      clearTimeout(timer);
+      reject(new Error("CDP websocket error"));
+    };
+  });
+}

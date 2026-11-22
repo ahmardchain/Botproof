@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { discoverFlows, selectFlows, type Flow } from "./flows.js";
 import { kaneAvailable, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
-import { launchChrome, type ChromeSession } from "./chrome.js";
+import { launchChrome, waitForTelegramReady, type ChromeSession } from "./chrome.js";
 import { bold, dim, printResult, printSummary, resultsMarkdown, red, yellow } from "./report.js";
 import { isEmptyDir, prepareScratchProfile, profileInUse } from "./profile.js";
 
@@ -56,6 +56,16 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
       results.push(r);
       continue;
     }
+    // Don't hand Kane an offline or logged-out Telegram.
+    const tg = await waitForTelegramReady(chrome.endpoint);
+    if (tg.state === "logged_out") {
+      await chrome.stop();
+      const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: `Telegram Web shows the login screen in the profile copy: log the test account into ${cfg.chromeProfile} again. Kane was not started (no credits used).` };
+      printResult(r);
+      results.push(r);
+      continue;
+    }
+    console.log(dim(`    Telegram Web ${tg.state === "ready" ? "connected" : "still syncing (starting anyway)"} after ${Math.round(tg.waitedMs / 1000)}s`));
     const r = await runFlow(f.path, {
       cdpEndpoint: chrome.endpoint,
       variablesFile,

@@ -18,6 +18,19 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Fix loop, third attempt — 22 Nov 2026, 18:58: Telegram was still syncing when Kane started
+
+Manual check on the master profile right before: connected, test message delivered. The fix-loop run then failed at the
+group-order step (429 s, 70.5 credits; Kane: "Espresso click landed outside the group-order button",
+`automation_bug/agent_misstep`), with Kane's browser showing "Updating…". In the two last runs Kane's copied profile was
+reconnecting at the moment of failure. Likely cause: each flow starts from a copy whose Telegram sync state is as old as the
+master's last use, and the test account is in busy public channels, so Telegram Web spends its first seconds catching up
+while Kane is already clicking. Fix (22 Nov): before Kane starts, BotProof polls the page over CDP until Telegram Web no
+longer shows "Updating…"/"Connecting…"/"Waiting for network" for 3 s in a row (max 90 s); if it shows the login screen,
+the flow fails at once without starting Kane (no credits). Verified with a page that shows "Updating…" for 5 s (BotProof
+waited 7 s) and a login page (detected in 4 s). The chat history confirms the bug: the bot replied "⛔ Only group admins
+can close the order" to the owner's anonymous `/close`.
+
 ## Fix loop, second attempt — 22 Nov 2026, 18:21: stopped for the wrong reason (BotProof bug, fixed)
 
 `fix --step group_close_admin` from a clean state: exit 2, 500 s, 65.0 credits, log `botproof/runs/fix-2026-11-22T17-21-07/LOG.md`.

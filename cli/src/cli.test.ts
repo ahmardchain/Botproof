@@ -175,3 +175,12 @@ test("fix loop: Kane triage blaming automation is not a bot failure", async () =
   assert.equal(environmentFailure({ ...base, evidencePath: env }), "automation_bug");
   assert.equal(environmentFailure({ ...base, evidencePath: bot }), undefined);
 });
+
+test("Telegram Web state from visible text", async () => {
+  const { classifyTelegramText } = await import("./chrome.js");
+  assert.equal(classifyTelegramText("Chats\nUpdating…\nBrew Bot"), "still_syncing");
+  assert.equal(classifyTelegramText("Connecting..."), "still_syncing");
+  assert.equal(classifyTelegramText("Log in to Telegram by QR Code\n1. Open Telegram on your phone"), "logged_out");
+  assert.equal(classifyTelegramText("Chats\ntestingbotproofgroup\nBrew Bot"), "ready");
+  assert.equal(classifyTelegramText(""), "unknown");
+});
