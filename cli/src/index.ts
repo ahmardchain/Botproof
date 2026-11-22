@@ -4,6 +4,7 @@ import { cmdHook } from "./hook.js";
 import { cmdInit } from "./init.js";
 import { cmdRun } from "./run.js";
 import { cmdWhy } from "./why.js";
+import { cmdVideo } from "./video.js";
 import { discoverFlows } from "./flows.js";
 import { loadConfig } from "./config.js";
 
@@ -14,6 +15,7 @@ Usage:
   botproof list                         List flows and their tags
   botproof run [flow...] [--tag <t>]... [--headless] [--merge] [--verbose] [--record]
   botproof fix [flow...] [--tag <t>]... [--headless] [--max-attempts <n>] [--step]
+  botproof video [recording-dir...] [--speed <n>]   Turn --record captures into shareable MP4s (title, live footage + step captions, PASS/FAIL)
   botproof why <run-dir|pack>...        Show Kane's failure record + screenshot for failed flows
   botproof hook                         Claude Code PreToolUse guard (reads hook JSON on stdin)
 
@@ -29,7 +31,7 @@ function parse(argv: string[]) {
     else if (a.startsWith("--")) {
       const key = a.slice(2);
       const next = argv[i + 1];
-      if (["bot", "group", "channel", "discussion", "profile", "max-attempts"].includes(key) && next !== undefined) flags[key] = argv[++i];
+      if (["bot", "group", "channel", "discussion", "profile", "max-attempts", "speed"].includes(key) && next !== undefined) flags[key] = argv[++i];
       else flags[key] = true;
     } else pos.push(a);
   }
@@ -65,6 +67,8 @@ async function main(): Promise<number> {
         step: !!flags.step,
         maxAttempts: flags["max-attempts"] ? Number(flags["max-attempts"]) : undefined,
       });
+    case "video":
+      return cmdVideo(pos, flags.speed ? Number(flags.speed) : undefined);
     case "why":
       return cmdWhy(pos);
     case "hook":

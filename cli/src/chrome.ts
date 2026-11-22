@@ -239,6 +239,7 @@ export async function startScreencast(endpoint: string, outDir: string): Promise
     const t = metadata.timestamp ?? Date.now() / 1000;
     const file = join(outDir, `f${String(++count).padStart(6, "0")}.jpg`);
     writeFileSync(file, Buffer.from(data, "base64"));
+    appendFileSync(join(outDir, "times.txt"), `${basename(file)} ${t.toFixed(3)}\n`);
     if (last) appendFileSync(list, `file '${basename(last.file)}'\nduration ${Math.max(0.01, t - last.t).toFixed(3)}\n`);
     last = { file, t };
   };

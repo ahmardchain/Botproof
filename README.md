@@ -122,6 +122,19 @@ See [docs/caught.md](docs/caught.md). Only bugs Kane actually caught while build
 1. **Anonymous group admins couldn't close a group order**: the bot answered "Only group admins" to the group's own owner.
    Caught by `group_close_admin`, fixed by the loop in [`80593e8`](https://github.com/ahmardchain/Botproof/commit/80593e8).
 
+## Video proof of every run
+
+Kane itself has no video output, but BotProof owns the Chrome that Kane drives, so it can film it:
+
+```bash
+node cli/dist/index.js run menu_pagination --record   # films the Telegram Web page while Kane works
+node cli/dist/index.js video                          # → botproof/recordings/<time>-<flow>/video.mp4
+```
+
+Each video is a title card, Kane's live footage of real Telegram Web (sped up to about a minute), a caption naming the
+step Kane is on, and a PASS/FAIL card with Kane's remark: something to attach to a pull request or show a client.
+It uses Chrome's own screencast (CDP `Page.startScreencast`) and ffmpeg (`ffmpeg-static` is an optional dependency).
+
 ## Demo bot
 
 `demo-bot/` is **Brew Bot**, a coffee-order bot ([grammY](https://grammy.dev)) built to exercise every area above:
@@ -177,7 +190,7 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 ## Repo map
 
 ```
-cli/                 the botproof CLI (TypeScript): init, run, fix, hook
+cli/                 the botproof CLI (TypeScript): init, run (--record), fix, why, video, hook
 botproof/flows/      22 plain-English Kane flows (*_test.md)
 botproof/botproof.config.json   variables, editable allowlist, agent command
 demo-bot/            Brew Bot + Mini App, deployed on Vercel

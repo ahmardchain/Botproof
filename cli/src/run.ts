@@ -81,17 +81,25 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
     console.log(dim(`    Telegram Web ${tg.state === "ready" ? "connected" : "still syncing (starting anyway)"} after ${Math.round(tg.waitedMs / 1000)}s`));
     // --record: film the Telegram Web page Kane drives (Kane itself has no video output).
     const recDir = join("botproof", "recordings", `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${f.name}`);
+    const stepTimes: { t: number; heading: string }[] = [];
     const rec = opts.record ? await startScreencast(chrome.endpoint, recDir).catch((e) => (console.log(yellow(`    recording failed to start: ${(e as Error).message}`)), undefined)) : undefined;
     const r = await runFlow(f.path, {
       cdpEndpoint: chrome.endpoint,
       variablesFile,
       timeout: cfg.stepTimeout,
       onEvent: (e) => {
-        if (e.type === "test_md_step_start") console.log(dim(`    · ${e.heading}`));
+        if (e.type === "test_md_step_start") {
+          console.log(dim(`    · ${e.heading}`));
+          if (rec) stepTimes.push({ t: Date.now() / 1000, heading: String(e.heading ?? "") });
+        }
         else if (opts.verbose && e.type === undefined && e.remark) console.log(dim(`      ${e.status}: ${e.remark}`));
       },
     });
-    if (rec) console.log(dim(`    recorded ${await rec.stop()} frames → ${recDir}`));
+    if (rec) {
+      console.log(dim(`    recorded ${await rec.stop()} frames → ${recDir}  (make a video: botproof video)`));
+      // step timeline + verdict, used by `botproof video` for captions and the end card
+      writeFileSync(join(recDir, "run.json"), JSON.stringify({ flow: f.path, name: f.name, title: f.title, status: r.status, durationS: r.durationS, failure: r.failure, steps: stepTimes }, null, 2));
+    }
     await chrome.stop();
     if (isEmptyDir(prof.path)) {
       r.profileWiped = true;
