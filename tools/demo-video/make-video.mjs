@@ -72,7 +72,27 @@ function codeHtml(text) {
     .join("\n");
 }
 
+/** Newest pack of a flow with the given result, from the committed run logs (folder names sort by time). */
+function newestPack(flow, status = "passed") {
+  const runs = join(root, "botproof", "runs");
+  if (!existsSync(runs)) return undefined;
+  for (const d of readdirSync(runs).sort().reverse()) {
+    for (const f of ["SUMMARY.md", "LOG.md"]) {
+      const p = join(runs, d, f);
+      if (!existsSync(p)) continue;
+      const rows = [...readFileSync(p, "utf8").matchAll(/^\| (\S+_test\.md) \| (\w+) \|.*?`([0-9a-f-]+\.evidence)`/gm)].reverse();
+      for (const m of rows) if (m[1].split(/[\\/]/).pop() === `${flow}_test.md` && m[2] === status && locatePack(m[3])) return m[3];
+    }
+  }
+  return undefined;
+}
+
 function packFrames(v) {
+  if (!v.pack && v.flow) {
+    v.pack = newestPack(v.flow, v.status ?? "passed");
+    if (v.pack) console.log(`  ${v.flow}: newest ${v.status ?? "passed"} pack ${v.pack}`);
+  }
+  if (!v.pack) return [render(page(`<h2>${esc(v.label)}</h2><div class="sub">(no ${esc(v.status ?? "passed")} evidence pack for ${esc(v.flow)} on this machine)</div>`))];
   const p = locatePack(v.pack);
   if (!p) {
     console.warn(`  ! pack ${v.pack} not found on this machine — showing a placeholder card`);
