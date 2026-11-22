@@ -44,6 +44,12 @@
       "id": "03-private",
       "visuals": [
         {
+          "type": "recording",
+          "flow": "menu_pagination",
+          "label": "menu_pagination_test.md · Kane taps Next / Prev in Telegram Web",
+          "weight": 6
+        },
+        {
           "type": "pack",
           "pack": "cd371984-3ac2-4c62-a01a-1e6c6f297e53.evidence",
           "label": "start_test.md · PASS",
@@ -112,6 +118,12 @@
           "type": "code",
           "title": "Claude's patch (attempt 1)",
           "text": "  bot.chatType([\"group\", \"supergroup\"]).command(\"close\", async (ctx) => {\n-    if (!(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {\n+    // An anonymous admin posts as the group itself:\n+    // from is @GroupAnonymousBot, sender_chat is the group.\n+    const anonymousAdmin = ctx.msg.sender_chat?.id === ctx.chat.id;\n+    if (!anonymousAdmin && !(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {"
+        },
+        {
+          "type": "recording",
+          "flow": "group_close_admin",
+          "label": "group_close_admin_test.md after the fix · /close works",
+          "weight": 5
         },
         {
           "type": "pack",

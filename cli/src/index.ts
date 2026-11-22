@@ -12,7 +12,7 @@ const HELP = `botproof — end-to-end tests for Telegram bots, driven by Kane CL
 Usage:
   botproof init [--bot <username>] [--group <link>] [--channel <link>] [--discussion <link>] [--profile <dir>] [--yes] [--skip-login]
   botproof list                         List flows and their tags
-  botproof run [flow...] [--tag <t>]... [--headless] [--merge] [--verbose]
+  botproof run [flow...] [--tag <t>]... [--headless] [--merge] [--verbose] [--record]
   botproof fix [flow...] [--tag <t>]... [--headless] [--max-attempts <n>] [--step]
   botproof why <run-dir|pack>...        Show Kane's failure record + screenshot for failed flows
   botproof hook                         Claude Code PreToolUse guard (reads hook JSON on stdin)
@@ -56,7 +56,7 @@ async function main(): Promise<number> {
       return 0;
     }
     case "run":
-      return cmdRun({ names: pos, tags, headless: !!flags.headless, merge: !!flags.merge, verbose: !!flags.verbose });
+      return cmdRun({ names: pos, tags, headless: !!flags.headless, merge: !!flags.merge, verbose: !!flags.verbose, record: !!flags.record });
     case "fix":
       return cmdFix({
         names: pos,

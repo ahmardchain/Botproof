@@ -3,7 +3,7 @@ import { join } from "node:path";
 import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { discoverFlows, selectFlows, type Flow } from "./flows.js";
 import { kaneAvailable, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
-import { launchChrome, waitForTelegramReady, type ChromeSession } from "./chrome.js";
+import { launchChrome, startScreencast, waitForTelegramReady, type ChromeSession } from "./chrome.js";
 import { bold, dim, printResult, printSummary, resultsMarkdown, red, yellow } from "./report.js";
 import { isEmptyDir, prepareScratchProfile, profileInUse } from "./profile.js";
 
@@ -13,6 +13,7 @@ export interface RunArgs {
   headless?: boolean;
   merge?: boolean;
   verbose?: boolean;
+  record?: boolean;
 }
 
 export function newRunId(prefix = "run"): string {
@@ -30,7 +31,7 @@ export function resolveFlows(cfg: BotProofConfig, names: string[], tags: string[
  * testrun gives every worker a fresh temporary Chrome profile (docs/user-guide/testrun.md),
  * which would drop the logged-in Telegram Web session. See docs/FINDINGS.md.
  */
-export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean } = {}): Promise<FlowResult[]> {
+export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean; record?: boolean } = {}): Promise<FlowResult[]> {
   const variablesFile = writeVariablesFile(cfg);
   const results: FlowResult[] = [];
   if (profileInUse(cfg.chromeProfile)) {
@@ -66,6 +67,9 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
       continue;
     }
     console.log(dim(`    Telegram Web ${tg.state === "ready" ? "connected" : "still syncing (starting anyway)"} after ${Math.round(tg.waitedMs / 1000)}s`));
+    // --record: film the Telegram Web page Kane drives (Kane itself has no video output).
+    const recDir = join("botproof", "recordings", `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${f.name}`);
+    const rec = opts.record ? await startScreencast(chrome.endpoint, recDir).catch((e) => (console.log(yellow(`    recording failed to start: ${(e as Error).message}`)), undefined)) : undefined;
     const r = await runFlow(f.path, {
       cdpEndpoint: chrome.endpoint,
       variablesFile,
@@ -75,6 +79,7 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
         else if (opts.verbose && e.type === undefined && e.remark) console.log(dim(`      ${e.status}: ${e.remark}`));
       },
     });
+    if (rec) console.log(dim(`    recorded ${await rec.stop()} frames → ${recDir}`));
     await chrome.stop();
     if (isEmptyDir(prof.path)) {
       r.profileWiped = true;

@@ -142,6 +142,18 @@ function visual(v) {
       return packFrames(v).map((png) => ({ png, weight: 1 }));
     case "stats":
       return stats().map((png) => ({ png, weight: 2.5 }));
+    case "recording": {
+      // A BotProof --record capture of Kane driving Telegram Web: newest folder whose name ends with -<flow>.
+      const dir = join(root, "botproof", "recordings");
+      const hit = existsSync(dir) ? readdirSync(dir).filter((d) => d.endsWith(`-${v.flow}`)).sort().at(-1) : undefined;
+      if (!hit || !existsSync(join(dir, hit, "frames.txt"))) {
+        console.warn(`  ! no recording for ${v.flow} (run: botproof run ${v.flow} --record) — skipped`);
+        return [];
+      }
+      const list = join(dir, hit, "frames.txt");
+      const natural = readFileSync(list, "utf8").split("\n").filter((l) => l.startsWith("duration ")).reduce((a, l) => a + Number(l.slice(9)), 0);
+      return [{ video: list, natural, label: v.label, weight: v.weight ?? 5 }];
+    }
     default:
       throw new Error(`unknown visual type ${v.type}`);
   }
@@ -178,14 +190,30 @@ for (const seg of story.segments) {
   const frames = seg.visuals.flatMap(visual);
   const total = audio ? audioDuration(audio) + 1.2 : frames.reduce((s, f) => s + f.weight * 2, 0);
   const wsum = frames.reduce((s, f) => s + f.weight, 0);
-  const list = frames.map((f) => `file '${f.png.replace(/'/g, "'\\''")}'\nduration ${((f.weight / wsum) * total).toFixed(3)}`).join("\n");
+  const clips = [];
+  frames.forEach((f, i) => {
+    const d = (f.weight / wsum) * total;
+    const clip = join(build, `${seg.id}-${String(i).padStart(2, "0")}.mp4`);
+    const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,fps=30,format=yuv420p`;
+    let args;
+    if (f.video) {
+      // speed the real-time recording to fill its slot; overlay a caption bar rendered by Chrome
+      const factor = d / Math.max(0.5, f.natural);
+      const cap = render(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}html,body{background:#ff00ff;padding:0}</style></head><body><div class="cap"><b>Kane · live</b>${esc(f.label ?? "")}</div></body></html>`);
+      args = ["-f", "concat", "-safe", "0", "-i", f.video, "-i", cap, "-filter_complex", `[0:v]setpts=${factor.toFixed(5)}*PTS,${vf}[v];[1:v]format=rgba,colorkey=0xff00ff:0.25[c];[v][c]overlay=0:0[o]`, "-map", "[o]"];
+    } else {
+      args = ["-loop", "1", "-i", f.png, "-vf", vf];
+    }
+    execFileSync(ffmpeg, ["-y", "-hide_banner", "-loglevel", "error", ...args, "-t", d.toFixed(3), "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-r", "30", clip], { stdio: "inherit" });
+    clips.push(clip);
+  });
   const listFile = join(build, `${seg.id}.txt`);
-  writeFileSync(listFile, `${list}\nfile '${frames.at(-1).png.replace(/'/g, "'\\''")}'\n`);
+  writeFileSync(listFile, clips.map((c) => `file '${c.replace(/'/g, "'\\''")}'`).join("\n") + "\n");
   const segOut = join(build, `${seg.id}.mp4`);
   const args = ["-y", "-hide_banner", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", listFile];
   if (audio) args.push("-i", audio);
   else args.push("-f", "lavfi", "-i", "anullsrc=r=44100:cl=stereo");
-  args.push("-vf", `scale=${W}:${H},fps=30,format=yuv420p`, "-af", "apad", "-t", total.toFixed(3), "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2", segOut);
+  args.push("-af", "apad", "-t", total.toFixed(3), "-c:v", "copy", "-c:a", "aac", "-b:a", "160k", "-ar", "44100", "-ac", "2", segOut);
   execFileSync(ffmpeg, args, { stdio: "inherit" });
   if (!audio) console.warn(`  ! no narration for ${seg.id} (silent)`);
   segFiles.push(segOut);

@@ -11,5 +11,10 @@ node tools/demo-video/make-video.mjs --audio-only   # download the narration (si
 node tools/demo-video/make-video.mjs            # render → tools/demo-video/out/botproof-demo.mp4
 ```
 
+Live footage: `node cli/dist/index.js run <flow> --record` films the Telegram Web page Kane drives (Chrome's own
+screencast over CDP; Kane itself has no video output) into `botproof/recordings/<time>-<flow>/`. Storyboard entries of
+type `recording` use the newest capture of a flow, sped up to fit the narration. Re-running an already-passed flow
+mostly replays Kane's recording from cache, so it is quick and cheap.
+
 Each segment lasts as long as its narration; missing narration renders silent with a warning, and a missing pack
 renders a placeholder card — check the output before uploading.

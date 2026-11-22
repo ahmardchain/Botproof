@@ -206,3 +206,54 @@ function evaluate(wsUrl: string, expression: string): Promise<string> {
     };
   });
 }
+
+/**
+ * Record the page Kane is driving, using Chrome's own screencast (CDP Page.startScreencast).
+ * Kane has no video output; because BotProof owns this Chrome, it can film it. Frames arrive only
+ * when the page changes and are written as JPEGs with their timestamps; `frames.txt` is an ffmpeg
+ * concat list (real timing) that tools/demo-video turns into a clip.
+ */
+export async function startScreencast(endpoint: string, outDir: string): Promise<{ stop: () => Promise<number> }> {
+  const { mkdirSync, writeFileSync, appendFileSync } = await import("node:fs");
+  const { join, basename } = await import("node:path");
+  mkdirSync(outDir, { recursive: true });
+  const targets = (await (await fetch(`${endpoint}/json/list`)).json()) as { type: string; webSocketDebuggerUrl?: string }[];
+  const page = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl);
+  if (!page?.webSocketDebuggerUrl) throw new Error("no page to record");
+  const ws = new WebSocket(page.webSocketDebuggerUrl);
+  await new Promise<void>((res, rej) => {
+    ws.onopen = () => res();
+    ws.onerror = () => rej(new Error("screencast websocket error"));
+  });
+  let id = 0;
+  let count = 0;
+  let last: { file: string; t: number } | undefined;
+  const list = join(outDir, "frames.txt");
+  writeFileSync(list, "");
+  const send = (method: string, params: object = {}) => ws.send(JSON.stringify({ id: ++id, method, params }));
+  ws.onmessage = (ev) => {
+    const msg = JSON.parse(String(ev.data)) as { method?: string; params?: { data: string; sessionId: number; metadata: { timestamp?: number } } };
+    if (msg.method !== "Page.screencastFrame" || !msg.params) return;
+    const { data, sessionId, metadata } = msg.params;
+    send("Page.screencastFrameAck", { sessionId });
+    const t = metadata.timestamp ?? Date.now() / 1000;
+    const file = join(outDir, `f${String(++count).padStart(6, "0")}.jpg`);
+    writeFileSync(file, Buffer.from(data, "base64"));
+    if (last) appendFileSync(list, `file '${basename(last.file)}'\nduration ${Math.max(0.01, t - last.t).toFixed(3)}\n`);
+    last = { file, t };
+  };
+  send("Page.startScreencast", { format: "jpeg", quality: 75, maxWidth: 1920, maxHeight: 1080, everyNthFrame: 1 });
+  return {
+    stop: async () => {
+      try {
+        send("Page.stopScreencast");
+      } catch {
+        /* page may be gone */
+      }
+      await new Promise((r) => setTimeout(r, 300));
+      ws.close();
+      if (last) appendFileSync(list, `file '${basename(last.file)}'\nduration 1.000\nfile '${basename(last.file)}'\n`);
+      return count;
+    },
+  };
+}
