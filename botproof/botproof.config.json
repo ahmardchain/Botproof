@@ -4,9 +4,9 @@
   "telegramWeb": "https://web.telegram.org/k/",
   "variables": {
     "bot_username": "botproofbot",
-    "group_link": "https://t.me/REPLACE_test_group",
-    "channel_link": "https://t.me/REPLACE_test_channel",
-    "discussion_link": "https://t.me/REPLACE_test_channel_chat",
+    "group_link": "https://t.me/testingbotproofgroup",
+    "channel_link": "https://t.me/testingbotproof",
+    "discussion_link": "https://t.me/testingbotproofgroup",
     "customer_name": "Ada",
     "customer_phone": "+2348012345678"
   },
