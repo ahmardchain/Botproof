@@ -110,6 +110,21 @@ function makeZip(files: Record<string, Buffer>): Buffer {
   return Buffer.concat([...locals, cd, eocd]);
 }
 
+test("the failure that ended the run wins over an earlier recovered one", async () => {
+  const { environmentFailure } = await import("./fix.js");
+  const dir = mkdtempSync(join(tmpdir(), "bp-last-"));
+  const p = join(dir, "x.evidence");
+  writeFileSync(
+    p,
+    makeZip({
+      "tests/t/steps/2-a/failure.yaml": Buffer.from("category: automation_bug (Appearance tip blocked a click)"),
+      "tests/t/steps/10-c/failure.yaml": Buffer.from("error: Test account is not recognized as a group admin for order closure"),
+    }),
+  );
+  assert.match(extractFailure(p).failureYaml!, /not recognized as a group admin/);
+  assert.equal(environmentFailure({ flow: "f", status: "failed", exitCode: 1, steps: [], evidencePath: p }), undefined);
+});
+
 test("extract failure.yaml and screenshot from a pack", () => {
   const dir = mkdtempSync(join(tmpdir(), "bp-"));
   const p = join(dir, "x.evidence");

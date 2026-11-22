@@ -58,11 +58,19 @@ export interface FailureDetail {
   annotated?: Buffer;
 }
 
-/** Find the first failed step in a pack: tests/<id>/steps/<ordinal>-<step>/failure.yaml (+ screenshot.png / annotated.png). */
+/**
+ * Find the failure that ended the run: the LAST failed step in the pack
+ * (tests/<id>/steps/<ordinal>-<step>/failure.yaml + screenshot.png / annotated.png).
+ * Earlier failure records can be ones Kane recovered from (22 Nov: a Telegram tip at step 1,
+ * while the run really ended at step 3 on the bot's reply).
+ */
 export function extractFailure(packPath: string): FailureDetail {
   const buf = readFileSync(packPath);
   const entries = listZip(buf);
-  const fail = entries.filter((e) => /\/steps\/[^/]+\/failure\.yaml$/.test(e.name)).sort((a, b) => a.name.localeCompare(b.name))[0];
+  const fails = entries
+    .filter((e) => /\/steps\/[^/]+\/failure\.yaml$/.test(e.name))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }));
+  const fail = fails.at(-1);
   const runFailure = entries.find((e) => e.name === "failure.yaml");
   if (!fail) return { failureYaml: runFailure ? readZipEntry(buf, runFailure).toString("utf8") : undefined };
   const stepDir = fail.name.replace(/failure\.yaml$/, "");

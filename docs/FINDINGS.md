@@ -18,6 +18,20 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Fix loop, second attempt — 22 Nov 2026, 18:21: stopped for the wrong reason (BotProof bug, fixed)
+
+`fix --step group_close_admin` from a clean state: exit 2, 500 s, 65.0 credits, log `botproof/runs/fix-2026-11-22T17-21-07/LOG.md`.
+Kane got past the Appearance tip (the new overlay instruction worked) and failed at step 3 "Close as the group owner":
+*"Test account is not recognized as a group admin for order closure"*. BotProof read the **first** failure record in the
+pack (the recovered step-1 tip, triaged `automation_bug`) and stopped as "environment". Fixed the same day: BotProof now
+uses the **last** failure record, the one that ended the run.
+
+The final screenshot also shows Telegram Web was not connected in that run ("Updating…", the new `/grouporder` and
+`/close` messages stuck with a clock icon), so the "⛔ Only group admins can close the order" reply Kane read was from an
+earlier run. Cause of the bot's refusal (from the code, consistent with that earlier reply): the test account posts as an
+**anonymous admin**, so Telegram sends the bot `@GroupAnonymousBot` with `sender_chat` = the group, and `isAdmin()` asks
+`getChatMember` about that placeholder, which is never an admin. A real bot bug: anonymous admins can't close orders.
+
 ## Fix loop, first live attempt — 22 Nov 2026, 17:54–18:10: correctly refused to patch
 
 `botproof fix --step group_close_admin` (test account set to "Remain anonymous", to reproduce a suspected anonymous-admin
