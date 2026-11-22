@@ -2,7 +2,23 @@
 
 Rule for this file: only what was observed. Anything not yet run says **NOT RUN** and why.
 
-## Status on 22 Nov 2026: spike blocked, not failed
+## First live run — 22 Nov 2026, 14:35 (Windows 11, Node 24.14.0, Chrome, kane-cli 0.10.7)
+
+Run on the developer's machine against the deployed bot `@botproofbot` (Vercel), test account logged into
+Telegram Web K in `C:\Users\<user>\.botproof\chrome-profile`. Run log: `botproof/runs/run-2026-11-22T13-35-39/SUMMARY.md`.
+
+| Flow | Result | Time | Credits | Notes |
+|---|---|---|---|---|
+| `private/start_test.md` | **PASS** | 600 s | 66.4 | First (authoring) run. Kane opened the chat via `#@botproofbot`, `/cancel` got "Order cancelled", `/start` got the bold "Welcome to Brew Bot" with the "📋 Open menu" button and no raw HTML. |
+| `start_test.md` (sample written by `init`) | FAIL at step 1 "Open the bot chat" | 77 s | 15.9 | Kane: "no viable actions remain". A duplicate sample `init` should not have written (fixed: `init` now only seeds a sample into an empty project). It also lacked `local_context`; not confirmed as the cause. |
+
+What this answers:
+- **Q1 (logged-in profile reused):** yes for one run — Kane started in Telegram Web already logged in. *Across runs* still to confirm with a second run.
+- **Q2 (partly):** Kane opened a bot chat, sent commands and read the formatted reply. Inline button tap + edit still to run (`menu_pagination`).
+- **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
+- `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
+
+## Status on 22 Nov 2026 (morning): spike blocked, not failed
 
 The five spike questions need three things this build environment did not have:
 
@@ -20,11 +36,11 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 
 | # | Question | Result | Evidence |
 |---|---|---|---|
-| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **NOT RUN** | blocked, see above |
-| 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **NOT RUN** | flows ready: `start_test.md`, `menu_pagination_test.md` |
+| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES for one run**; across runs pending | `start_test.md` PASS, 22 Nov 14:35 |
+| 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **Chat + /start + reply: YES**; button + edit pending | `start_test.md` PASS; next `menu_pagination_test.md` |
 | 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
 | 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **NOT RUN** | flows ready: `group_order_test.md`, `channel_special_vote_test.md` |
-| 5 | Headless works? Time and credits per flow | **NOT RUN** | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
+| 5 | Headless works? Time and credits per flow | **Authoring: 600 s, 66.4 credits** (start flow); replay + headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
 
 How to run it (about 30 minutes, uses a few dozen credits):
 

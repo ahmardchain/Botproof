@@ -4,6 +4,16 @@ import { createInterface } from "node:readline/promises";
 import { join, resolve, sep } from "node:path";
 import { CONFIG_PATH, DEFAULT_CONFIG, expandHome, loadConfig, saveConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { kaneAvailable, kaneSync } from "./kane.js";
+import { discoverFlows } from "./flows.js";
+
+const CONTEXT_PATH = "botproof/telegram-context.md";
+const TELEGRAM_CONTEXT = `# Telegram Web (K) — notes for the test agent
+
+- The browser is already logged in to Telegram Web K as a dedicated test account. Never log out or change settings.
+- Newest messages are at the bottom. Bot messages are on the left, the test account's on the right.
+- Inline buttons sit under the bot message they belong to; an edit in place changes that same bubble.
+- Bots can take a few seconds to answer. Wait up to 15 seconds for a reply.
+`;
 import { bold, dim, green, red, yellow } from "./report.js";
 
 export interface InitArgs {
@@ -21,6 +31,7 @@ mode: testing
 url: https://web.telegram.org/k/
 tags: [smoke, commands]
 max_steps: 25
+local_context: botproof/telegram-context.md
 ---
 
 # /start replies with a welcome
@@ -135,15 +146,17 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     saveConfig(existing);
     writeVariablesFile(existing);
     mkdirSync(existing.flowsDir, { recursive: true });
-    const sample = join(existing.flowsDir, "start_test.md");
-    if (!existsSync(sample)) writeFileSync(sample, SAMPLE_FLOW);
+    // Only seed a sample into an empty project: never add a duplicate next to existing flows.
+    const hasFlows = discoverFlows(existing.flowsDir).length > 0;
+    if (!hasFlows) writeFileSync(join(existing.flowsDir, "start_test.md"), SAMPLE_FLOW);
+    if (!existsSync(CONTEXT_PATH)) writeFileSync(CONTEXT_PATH, TELEGRAM_CONTEXT);
     const gi = existsSync(".gitignore") ? readFileSync(".gitignore", "utf8") : "";
     const ignores = [".testmuai/evidence/", "botproof/.fix-*", "botproof/runs/**/*.png"].filter((l) => !gi.includes(l));
     if (ignores.length) appendFileSync(".gitignore", `\n# BotProof\n${ignores.join("\n")}\n`);
 
     console.log(bold(green("\nReady.")));
     console.log(`  config:  ${CONFIG_PATH}`);
-    console.log(`  flows:   ${existing.flowsDir}/ (sample: start_test.md)`);
+    console.log(`  flows:   ${existing.flowsDir}/${hasFlows ? "" : " (sample: start_test.md)"}`);
     console.log(`  next:    botproof run start`);
     return 0;
   } finally {

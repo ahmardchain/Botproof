@@ -3,7 +3,7 @@
   "chromeProfile": "~/.botproof/chrome-profile",
   "telegramWeb": "https://web.telegram.org/k/",
   "variables": {
-    "bot_username": "REPLACE_with_your_bot_username",
+    "bot_username": "botproofbot",
     "group_link": "https://t.me/REPLACE_test_group",
     "channel_link": "https://t.me/REPLACE_test_channel",
     "discussion_link": "https://t.me/REPLACE_test_channel_chat",
