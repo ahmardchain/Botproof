@@ -1,9 +1,9 @@
-import { spawn, spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
-import { join, resolve } from "node:path";
+import { join, resolve, sep } from "node:path";
 import { CONFIG_PATH, DEFAULT_CONFIG, expandHome, loadConfig, saveConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
-import { kaneAvailable } from "./kane.js";
+import { kaneAvailable, kaneSync } from "./kane.js";
 import { bold, dim, green, red, yellow } from "./report.js";
 
 export interface InitArgs {
@@ -41,6 +41,7 @@ export function findChrome(): string | undefined {
     "/usr/bin/google-chrome",
     "/usr/bin/google-chrome-stable",
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    process.env.LOCALAPPDATA && join(process.env.LOCALAPPDATA, "Google", "Chrome", "Application", "chrome.exe"),
     "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
     "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe",
   ].filter(Boolean) as string[];
@@ -70,7 +71,7 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     const kane = kaneAvailable();
     check(kane.ok, `kane-cli ${kane.version ?? ""}`, "npm install -g @testmuai/kane-cli");
     if (kane.ok) {
-      const who = spawnSync("kane-cli", ["whoami"], { encoding: "utf8" });
+      const who = kaneSync(["whoami"]);
       const loggedIn = !/not logged in/i.test(who.stdout + who.stderr);
       check(loggedIn, "kane-cli logged in to TestMu AI", "Run `kane-cli login` (use the account where you claimed your hackathon credits).");
     }
@@ -85,14 +86,14 @@ export async function cmdInit(args: InitArgs): Promise<number> {
       ),
     );
     const profile = resolve(expandHome(args.profile ?? (await ask("Chrome profile directory for the test account:", existing.chromeProfile))));
-    if (profile.startsWith(resolve(".") + "/") && !profile.includes("/.botproof/")) {
+    if (profile.startsWith(resolve(".") + sep)) {
       console.log(red("  Refusing a profile inside the repo: it would be one `git add` away from leaking the session."));
       return 2;
     }
     mkdirSync(profile, { recursive: true });
     existing.chromeProfile = profile;
     if (kane.ok) {
-      const r = spawnSync("kane-cli", ["config", "chrome-profile", profile], { encoding: "utf8" });
+      const r = kaneSync(["config", "chrome-profile", profile]);
       check(r.status === 0, `kane-cli will reuse this profile for every run`, (r.stderr || r.stdout).trim());
     }
 

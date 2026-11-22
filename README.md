@@ -21,6 +21,9 @@ render, a keyboard that never goes away, a Mini App that opens blank.
 
 ## For judges: start here
 
+Telegram is a third-party login we can't hand over, so per the rules' fallback clause every flow ships with a
+**recorded run**: its sealed Kane evidence pack (step 1, no login needed) and the demo video.
+
 | Do this | You'll see |
 |---|---|
 | 1. **No login needed:** download a pack from [Evidence packs](#evidence-packs), then `npx @testmuai/kane-cli evidence serve <pack>.evidence` | Kane's run step by step: screenshots of Telegram Web, what it tapped, what it checked |

@@ -123,8 +123,23 @@ export interface RunOptions {
   onEvent?: (e: Ev) => void;
 }
 
+/**
+ * How to start kane-cli. On Windows npm installs it as a .cmd shim, which Node can only
+ * start through the shell, so the command line is built and quoted here.
+ */
+export function kaneCommand(args: string[]): { cmd: string; args: string[]; shell: boolean } {
+  if (process.platform !== "win32") return { cmd: "kane-cli", args, shell: false };
+  const q = (a: string) => (/[\s"&|<>^()]/.test(a) ? `"${a.replace(/"/g, '\\"')}"` : a);
+  return { cmd: ["kane-cli", ...args].map(q).join(" "), args: [], shell: true };
+}
+
+export function kaneSync(args: string[], opts: { cwd?: string } = {}) {
+  const k = kaneCommand(args);
+  return spawnSync(k.cmd, k.args, { cwd: opts.cwd, shell: k.shell, encoding: "utf8", maxBuffer: 64 * 1024 * 1024 });
+}
+
 export function kaneAvailable(): { ok: boolean; version?: string } {
-  const r = spawnSync("kane-cli", ["--version"], { encoding: "utf8" });
+  const r = kaneSync(["--version"]);
   return r.status === 0 ? { ok: true, version: r.stdout.trim() } : { ok: false };
 }
 
@@ -137,7 +152,8 @@ export function runFlow(flowPath: string, opts: RunOptions = {}, cwd = process.c
   const started = Date.now();
   return new Promise((resolveP) => {
     // stdin closed: nothing interactive can block a run (Kane disables ask_user without a TTY).
-    const child = spawn("kane-cli", args, { cwd, stdio: ["ignore", "pipe", "pipe"] });
+    const k = kaneCommand(args);
+    const child = spawn(k.cmd, k.args, { cwd, shell: k.shell, stdio: ["ignore", "pipe", "pipe"] });
     let stdout = "";
     let stderr = "";
     let buf = "";
@@ -179,9 +195,6 @@ export function newestEvidence(cwd: string, sinceMs: number): string | undefined
 
 /** Merge several packs into one with `kane-cli evidence merge <packs...> --run-id <id>`. */
 export function mergeEvidence(packs: string[], runId: string, out: string, cwd = process.cwd()): { ok: boolean; output: string } {
-  const r = spawnSync("kane-cli", ["evidence", "merge", ...packs, "--run-id", runId, "--out", out, "--title", `BotProof ${runId}`], {
-    cwd,
-    encoding: "utf8",
-  });
+  const r = kaneSync(["evidence", "merge", ...packs, "--run-id", runId, "--out", out, "--title", `BotProof ${runId}`], { cwd });
   return { ok: r.status === 0, output: (r.stdout + r.stderr).trim() };
 }
