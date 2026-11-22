@@ -19,3 +19,16 @@ mostly replays Kane's recording from cache, so it is quick and cheap.
 
 Each segment lasts as long as its narration; missing narration renders silent with a warning, and a missing pack
 renders a placeholder card — check the output before uploading.
+
+## The submitted film (`film/`)
+
+`film/film.html` is the demo film as time-driven HTML scenes (camera moves over the real Kane screenshots in
+`docs/screenshots/`, the real patch, the real log). `film/render-film.mjs` renders it frame by frame with Playwright and
+ffmpeg and lays the narration under each scene. The narration is generated offline with **Kokoro** (free, open-source
+neural TTS, voice `af_heart`) by `film/kokoro_tts.py`.
+
+```bash
+python tools/demo-video/film/kokoro_tts.py /tmp/vo        # see the file header for the one-time setup
+node tools/demo-video/film/render-film.mjs /tmp/vo        # → tools/demo-video/out/botproof-demo.mp4
+```
+
