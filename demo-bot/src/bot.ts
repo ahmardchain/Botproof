@@ -97,7 +97,7 @@ export function createBot(token: string, opts: BotOptions): Bot {
     lines.push("", "Send /menu to see drinks or /help for all commands.");
     await ctx.reply(lines.join("\n"), {
       ...HTML,
-      reply_markup: new InlineKeyboard().text("📋 Open menu", "menu:1"),
+      reply_markup: startKeyboard(ctx.me.username, ctx.chat.type === "private"),
     });
     // Deep link straight into ordering a drink, e.g. t.me/<bot>?start=order_latte
     const m = /^order_([a-z]+)$/.exec(payload);
@@ -106,20 +106,38 @@ export function createBot(token: string, opts: BotOptions): Bot {
     }
   });
 
-  bot.command("help", (ctx) =>
-    ctx.reply(
-      [
-        "<b>Brew Bot commands</b>",
-        "/menu — browse drinks",
-        "/cancel — cancel the current order",
-        "/grouporder — start a group order (groups)",
-        "/close — close the group order (group admins only)",
-        "/special — post today's special to the channel (channel admins)",
-        "/help — this message",
-      ].join("\n"),
-      HTML,
-    ),
-  );
+  // Main menu: every action reachable with a tap. Web App buttons only work in private chats.
+  function startKeyboard(username: string, isPrivate: boolean): InlineKeyboard {
+    const kb = new InlineKeyboard().text("📋 Open menu", "menu:1");
+    if (isPrivate) kb.webApp("💳 Checkout", `${publicUrl}/checkout.html?src=menu`);
+    kb.row().text("❓ Help", "help").text("🛑 Cancel order", "cancel");
+    kb.row().url("👥 Add me to a group", `https://t.me/${username}?startgroup=true`);
+    if (opts.channelId?.startsWith("@")) kb.row().url("📢 Today's special", `https://t.me/${opts.channelId.slice(1)}`);
+    return kb;
+  }
+
+  const HELP_TEXT = [
+    "<b>Brew Bot commands</b>",
+    "/menu — browse drinks",
+    "/cancel — cancel the current order",
+    "/grouporder — start a group order (groups)",
+    "/close — close the group order (group admins only)",
+    "/special — post today's special to the channel (channel admins)",
+    "/help — this message",
+  ].join("\n");
+
+  bot.command("help", (ctx) => ctx.reply(HELP_TEXT, { ...HTML, reply_markup: new InlineKeyboard().text("📋 Open menu", "menu:1") }));
+
+  bot.callbackQuery("help", async (ctx) => {
+    await ctx.answerCallbackQuery();
+    await ctx.reply(HELP_TEXT, { ...HTML, reply_markup: new InlineKeyboard().text("📋 Open menu", "menu:1") });
+  });
+
+  bot.callbackQuery("cancel", async (ctx) => {
+    if (ctx.chat && ctx.from) await store.del(convKey(ctx.chat.id, ctx.from.id));
+    await ctx.answerCallbackQuery({ text: "Order cancelled" });
+    await ctx.reply("Order cancelled. Send /menu to start again.", { reply_markup: { remove_keyboard: true } });
+  });
 
   bot.command("menu", (ctx) => ctx.reply(menuText(1), { ...HTML, reply_markup: menuKeyboard(1) }));
 

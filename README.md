@@ -7,7 +7,7 @@ BotProof runs plain-English test flows against your Telegram bot in the real Tel
 
 [Demo video](#) _(coming)_ · [Demo bot](#demo-bot) · [Evidence packs](#evidence-packs) · [Install](#install-and-run)
 
-> **Status (22 Nov 2026):** the CLI, the demo bot, 21 flows and the fix loop are built and unit-tested. The first
+> **Status (22 Nov 2026):** the CLI, the demo bot, 22 flows and the fix loop are built and unit-tested. The first
 > live Kane run against Telegram Web (the spike) has **not run yet**; see [docs/FINDINGS.md](docs/FINDINGS.md).
 > Until it does, no flow below is marked as passing.
 
@@ -38,7 +38,7 @@ Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. "
 
 | Area | What is checked | Flow | Pack |
 |---|---|---|---|
-| Commands & deep links | `/start` welcome renders; `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) | – |
+| Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) · [main_menu](botproof/flows/private/main_menu_test.md) · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) | – |
 | Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) · [item_details](botproof/flows/private/item_details_test.md) | – |
 | Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) | – |
 | Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) | – |
@@ -90,7 +90,7 @@ See [docs/caught.md](docs/caught.md). Only bugs Kane actually caught while build
 ## Demo bot
 
 `demo-bot/` is **Brew Bot**, a coffee-order bot ([grammY](https://grammy.dev)) built to exercise every area above:
-paginated inline menu, callback alerts, quantity reply keyboard, a validated order conversation, an HTML-formatted
+paginated inline menu, callback alerts, quantity reply keyboard, a /start main menu of buttons, a validated order conversation, an HTML-formatted
 summary and photo, a checkout Mini App (`public/checkout.html`) with Telegram's main button, a menu button, group
 orders with admin-only `/close`, and a channel "today's special" with votes and comment replies.
 
@@ -139,7 +139,7 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 
 ```
 cli/                 the botproof CLI (TypeScript): init, run, fix, hook
-botproof/flows/      21 plain-English Kane flows (*_test.md)
+botproof/flows/      22 plain-English Kane flows (*_test.md)
 botproof/botproof.config.json   variables, editable allowlist, agent command
 demo-bot/            Brew Bot + Mini App, deployed on Vercel
 .claude/             Claude Code skill, /botproof-fix command, edit-guard hook
