@@ -1,0 +1,143 @@
+import { appendFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
+import { discoverFlows, selectFlows, type Flow } from "./flows.js";
+import { kaneAvailable, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
+import { launchChrome, startScreencast, waitForTelegramReady, type ChromeSession } from "./chrome.js";
+import { bold, dim, printResult, printSummary, resultsMarkdown, red, yellow } from "./report.js";
+import { isEmptyDir, prepareScratchProfile, profileInUse } from "./profile.js";
+
+export interface RunArgs {
+  names: string[];
+  tags: string[];
+  headless?: boolean;
+  merge?: boolean;
+  verbose?: boolean;
+  record?: boolean;
+}
+
+export function newRunId(prefix = "run"): string {
+  return `${prefix}-${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}`;
+}
+
+export function resolveFlows(cfg: BotProofConfig, names: string[], tags: string[]): Flow[] {
+  const flows = selectFlows(discoverFlows(cfg.flowsDir), names, tags);
+  if (flows.length === 0) throw new Error(`No flows match${names.length ? ` ${names.join(", ")}` : ""}${tags.length ? ` tags ${tags.join(", ")}` : ""} in ${cfg.flowsDir}.`);
+  return flows;
+}
+
+/**
+ * Flows run one at a time with `kane-cli testmd run`, not `kane-cli testrun run`:
+ * testrun gives every worker a fresh temporary Chrome profile (docs/user-guide/testrun.md),
+ * which would drop the logged-in Telegram Web session. See docs/FINDINGS.md.
+ */
+/** Append one finished flow to botproof/runs/PROGRESS.md at once, so a killed batch loses nothing. */
+function recordProgress(r: FlowResult) {
+  const p = join("botproof", "runs", "PROGRESS.md");
+  mkdirSync(join("botproof", "runs"), { recursive: true });
+  if (!existsSync(p)) writeFileSync(p, "# Every finished flow, in order (written as each flow ends)\n\n| When | Flow | Result | Time | Credits | Evidence pack | Failure |\n|---|---|---|---|---|---|---|\n");
+  const row = resultsMarkdown([r]).split("\n").at(-1)!;
+  appendFileSync(p, `| ${new Date().toISOString().slice(0, 16).replace("T", " ")} ${row}\n`);
+}
+
+export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean; record?: boolean } = {}): Promise<FlowResult[]> {
+  const variablesFile = writeVariablesFile(cfg);
+  const results: FlowResult[] = [];
+  if (profileInUse(cfg.chromeProfile)) {
+    console.log(yellow(`! ${cfg.chromeProfile} looks open in Chrome. Close that Chrome window so its login is fully saved before copying.`));
+  }
+  for (const f of flows) {
+    console.log(dim(`▶ ${f.path}  [${f.tags.join(", ")}]`));
+    // Fresh copy of the logged-in master profile for every flow; Kane only ever sees the copy.
+    const prof = prepareScratchProfile(cfg.chromeProfile);
+    if (!prof.ok) {
+      const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: prof.reason };
+      printResult(r);
+      recordProgress(r);
+      results.push(r);
+      continue;
+    }
+    // BotProof owns the browser: Chrome on the copy, Kane attached over CDP (see chrome.ts).
+    let chrome: ChromeSession;
+    try {
+      chrome = await launchChrome({ userDataDir: prof.path, headless: opts.headless ?? cfg.headless, startUrl: cfg.telegramWeb });
+    } catch (e) {
+      const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: (e as Error).message };
+      printResult(r);
+      recordProgress(r);
+      results.push(r);
+      continue;
+    }
+    // Don't hand Kane an offline or logged-out Telegram.
+    const tg = await waitForTelegramReady(chrome.endpoint);
+    if (tg.state === "logged_out") {
+      await chrome.stop();
+      const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: `Telegram Web shows the login screen in the profile copy: log the test account into ${cfg.chromeProfile} again. Kane was not started (no credits used).` };
+      printResult(r);
+      recordProgress(r);
+      results.push(r);
+      continue;
+    }
+    console.log(dim(`    Telegram Web ${tg.state === "ready" ? "connected" : "still syncing (starting anyway)"} after ${Math.round(tg.waitedMs / 1000)}s`));
+    // --record: film the Telegram Web page Kane drives (Kane itself has no video output).
+    const recDir = join("botproof", "recordings", `${new Date().toISOString().replace(/[:.]/g, "-").slice(0, 19)}-${f.name}`);
+    const stepTimes: { t: number; heading: string }[] = [];
+    const rec = opts.record ? await startScreencast(chrome.endpoint, recDir).catch((e) => (console.log(yellow(`    recording failed to start: ${(e as Error).message}`)), undefined)) : undefined;
+    const r = await runFlow(f.path, {
+      cdpEndpoint: chrome.endpoint,
+      variablesFile,
+      timeout: cfg.stepTimeout,
+      onEvent: (e) => {
+        if (e.type === "test_md_step_start") {
+          console.log(dim(`    · ${e.heading}`));
+          if (rec) stepTimes.push({ t: Date.now() / 1000, heading: String(e.heading ?? "") });
+        }
+        else if (opts.verbose && e.type === undefined && e.remark) console.log(dim(`      ${e.status}: ${e.remark}`));
+      },
+    });
+    if (rec) {
+      console.log(dim(`    recorded ${await rec.stop()} frames → ${recDir}  (make a video: botproof video)`));
+      // step timeline + verdict, used by `botproof video` for captions and the end card
+      writeFileSync(join(recDir, "run.json"), JSON.stringify({ flow: f.path, name: f.name, title: f.title, status: r.status, durationS: r.durationS, failure: r.failure, steps: stepTimes }, null, 2));
+    }
+    await chrome.stop();
+    if (isEmptyDir(prof.path)) {
+      r.profileWiped = true;
+      console.log(red(`        Kane left the run's Chrome profile empty (the master login is untouched).`));
+    }
+    printResult(r);
+    recordProgress(r);
+      results.push(r);
+  }
+  return results;
+}
+
+export async function cmdRun(args: RunArgs): Promise<number> {
+  const k = kaneAvailable();
+  if (!k.ok) {
+    console.error("kane-cli not found. Install it: npm install -g @testmuai/kane-cli");
+    return 2;
+  }
+  const cfg = loadConfig();
+  const flows = resolveFlows(cfg, args.names, args.tags);
+  const runId = newRunId();
+  console.log(bold(`BotProof · ${flows.length} flow(s) · kane-cli ${k.version} · ${cfg.telegramWeb}`));
+  const results = await runFlows(cfg, flows, args);
+  printSummary(results);
+
+  const dir = join("botproof", "runs", runId);
+  mkdirSync(dir, { recursive: true });
+  writeFileSync(join(dir, "results.json"), JSON.stringify({ runId, kane: k.version, results }, null, 2));
+  writeFileSync(join(dir, "SUMMARY.md"), `# ${runId}\n\n${resultsMarkdown(results)}\n`);
+  if (args.merge) {
+    const packs = results.map((r) => r.evidencePath).filter((p): p is string => !!p);
+    if (packs.length > 1) {
+      const out = join(".testmuai", "evidence", `${runId}.evidence`);
+      const m = mergeEvidence(packs, runId, out);
+      console.log(m.ok ? `merged evidence pack: ${out}` : `evidence merge failed: ${m.output}`);
+    }
+  }
+  console.log(dim(`run log: ${dir}/SUMMARY.md`));
+  if (results.every((r) => r.status === "passed")) return 0;
+  return results.some((r) => r.status === "failed") ? 1 : 2;
+}

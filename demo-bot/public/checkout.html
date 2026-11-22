@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Brew Bot Checkout</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg: var(--tg-theme-bg-color, #ffffff);
+      --text: var(--tg-theme-text-color, #1b1b1b);
+      --hint: var(--tg-theme-hint-color, #6f6f6f);
+      --accent: var(--tg-theme-button-color, #8a5a2b);
+      --accent-text: var(--tg-theme-button-text-color, #ffffff);
+      --card: var(--tg-theme-secondary-bg-color, #f4efe9);
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 16px; font: 16px/1.4 system-ui, sans-serif; background: var(--bg); color: var(--text); }
+    h1 { font-size: 20px; margin: 0 0 4px; }
+    p.hint { color: var(--hint); margin: 0 0 16px; font-size: 14px; }
+    .card { background: var(--card); border-radius: 12px; padding: 12px 14px; margin-bottom: 14px; }
+    label { display: block; font-size: 14px; color: var(--hint); margin: 10px 0 4px; }
+    select, input { width: 100%; padding: 10px; font-size: 16px; border-radius: 8px; border: 1px solid #ccc; background: var(--bg); color: var(--text); }
+    .row { display: flex; justify-content: space-between; }
+    .total { font-weight: 700; font-size: 18px; }
+    #fallback { display: none; width: 100%; padding: 12px; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-text); font-size: 16px; }
+    #status { margin-top: 12px; font-weight: 600; }
+    #error { color: #c62828; font-size: 14px; min-height: 18px; }
+  </style>
+</head>
+<body>
+  <h1>☕ Brew Bot Checkout</h1>
+  <p class="hint" id="who">Review your order and pay with the button below.</p>
+
+  <div class="card">
+    <label for="drink">Drink</label>
+    <select id="drink"></select>
+    <label for="qty">Quantity</label>
+    <select id="qty"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select>
+    <label for="pickup">Pickup time</label>
+    <select id="pickup">
+      <option>In 10 minutes</option>
+      <option>In 20 minutes</option>
+      <option>In 30 minutes</option>
+    </select>
+    <label for="tip">Tip</label>
+    <select id="tip"><option value="0">No tip</option><option value="0.1">10%</option><option value="0.15">15%</option></select>
+  </div>
+
+  <div class="card row"><span>Total</span><span class="total" id="total">$0.00</span></div>
+  <div id="error" role="alert"></div>
+  <button id="fallback" type="button">Pay</button>
+  <div id="status"></div>
+
+  <script>
+    const DRINKS = {
+      latte: ["Latte", 4.5], espresso: ["Espresso", 3.0], cappuccino: ["Cappuccino", 4.0],
+      mocha: ["Mocha", 4.75], americano: ["Americano", 3.25], chai: ["Chai Latte", 4.25],
+    };
+    const tg = window.Telegram && window.Telegram.WebApp;
+    const q = new URLSearchParams(location.search);
+    const src = q.get("src") || "menu"; // "kb" = opened from reply keyboard -> sendData works
+    const $ = (id) => document.getElementById(id);
+
+    for (const [id, [name, price]] of Object.entries(DRINKS)) {
+      const o = document.createElement("option");
+      o.value = id; o.textContent = `${name} — $${price.toFixed(2)}`;
+      $("drink").appendChild(o);
+    }
+    if (q.get("drink") && DRINKS[q.get("drink")]) $("drink").value = q.get("drink");
+    if (q.get("qty")) $("qty").value = q.get("qty");
+    if (q.get("name")) $("who").textContent = `Order for ${q.get("name")}. Review and pay below.`;
+
+    function total() {
+      const [, price] = DRINKS[$("drink").value];
+      const sub = price * Number($("qty").value);
+      return Math.round(sub * (1 + Number($("tip").value)) * 100) / 100;
+    }
+    function render() {
+      const t = total();
+      $("total").textContent = `$${t.toFixed(2)}`;
+      const label = `Pay $${t.toFixed(2)}`;
+      if (tg && tg.MainButton) tg.MainButton.setParams({ text: label, is_visible: true, is_active: true });
+      $("fallback").textContent = label;
+    }
+    ["drink", "qty", "tip", "pickup"].forEach((id) => $(id).addEventListener("change", render));
+
+    async function pay() {
+      $("error").textContent = "";
+      const payload = { order: q.get("order") || "", total: total(), pickup: $("pickup").value, drink: $("drink").value, qty: Number($("qty").value) };
+      if (src === "kb" && tg && tg.initData !== undefined) {
+        // Reply-keyboard launch: data goes straight back to the bot as message.web_app_data. Closes the app.
+        tg.sendData(JSON.stringify(payload));
+        return;
+      }
+      if (tg && tg.MainButton) tg.MainButton.showProgress();
+      try {
+        const res = await fetch("/api/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...payload, initData: tg ? tg.initData : "" }),
+        });
+        const body = await res.json();
+        if (!body.ok) throw new Error(body.error || "checkout failed");
+        $("status").textContent = "✅ Paid! Check your chat with Brew Bot.";
+        if (tg) setTimeout(() => tg.close(), 1200);
+      } catch (e) {
+        $("error").textContent = `Payment failed: ${e.message}`;
+      } finally {
+        if (tg && tg.MainButton) tg.MainButton.hideProgress();
+      }
+    }
+
+    if (tg && tg.initData) {
+      tg.ready();
+      tg.expand();
+      tg.MainButton.onClick(pay);
+    } else {
+      // Opened outside Telegram: show a normal button so the page is still usable.
+      $("fallback").style.display = "block";
+      $("fallback").addEventListener("click", pay);
+    }
+    render();
+  </script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+# Only demo-bot/ is deployed (Vercel project root directory). Never upload run artifacts:
+# evidence packs and run logs contain screenshots of the test account.
+.testmuai
+botproof
+cli
+docs
+.claude
+*.evidence

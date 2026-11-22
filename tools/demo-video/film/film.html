@@ -1,0 +1,455 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>BotProof demo film</title>
+<style>
+  :root { --bg:#0b0f14; --panel:#121922; --line:#233040; --text:#e8eef5; --dim:#8a9aab; --blue:#2aabee; --green:#3fb950; --red:#f85149; --amber:#e3b341; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; width:1920px; height:1080px; overflow:hidden; background:var(--bg); color:var(--text);
+    font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif; }
+  .scene { position:absolute; inset:0; opacity:0; }
+  .abs { position:absolute; }
+  .grid { position:absolute; inset:0; background-image: radial-gradient(circle at 1px 1px, #1a2430 1px, transparent 0); background-size: 36px 36px; opacity:.55; }
+  .glow { position:absolute; width:1200px; height:1200px; border-radius:50%; filter: blur(140px); opacity:.22; }
+  .kicker { font-size:26px; letter-spacing:4px; text-transform:uppercase; color:var(--blue); font-weight:600; }
+  .h1 { font-size:96px; font-weight:800; letter-spacing:-2px; line-height:1.02; }
+  .h2 { font-size:60px; font-weight:750; letter-spacing:-1px; line-height:1.1; }
+  .p { font-size:34px; color:#c6d2de; line-height:1.4; }
+  .chip { display:inline-block; padding:14px 24px; border-radius:999px; border:1px solid var(--line); background:var(--panel); font-size:30px; margin:0 14px 14px 0; }
+  .win { position:absolute; background:#0e141b; border:1px solid var(--line); border-radius:18px; overflow:hidden; box-shadow:0 30px 80px #000c; }
+  .win .bar { height:46px; display:flex; align-items:center; gap:9px; padding:0 16px; background:#151d26; border-bottom:1px solid var(--line); }
+  .win .bar i { width:13px; height:13px; border-radius:50%; background:#33404e; display:block; }
+  .win .bar span { margin-left:14px; font-size:19px; color:var(--dim); background:#0e141b; padding:5px 16px; border-radius:8px; }
+  .win .view { position:relative; overflow:hidden; }
+  .win .view img { position:absolute; left:0; top:0; width:100%; }
+  .cam { position:absolute; left:0; top:0; width:100%; transform-origin:0 0; }
+  .cam img { position:static !important; display:block; width:100%; }
+  .hl { position:absolute; border-radius:16px; border:4px solid; }
+  .tag { position:absolute; font-size:26px; font-weight:650; padding:10px 18px; border-radius:12px; white-space:nowrap; }
+  .code { font-family: "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace; font-size:25px; line-height:1.55; white-space:pre; }
+  .node { position:absolute; width:300px; height:150px; border-radius:22px; background:var(--panel); border:2px solid var(--line);
+          display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; }
+  .node b { font-size:31px; } .node small { font-size:22px; color:var(--dim); margin-top:6px; }
+  .arrow { position:absolute; height:4px; background:var(--line); transform-origin:left center; }
+  .arrow::after { content:""; position:absolute; right:-2px; top:-8px; border-left:16px solid var(--line); border-top:10px solid transparent; border-bottom:10px solid transparent; }
+  .tick { font-size:30px; margin:0 0 16px; display:flex; align-items:center; gap:16px; }
+  .tick .c { width:38px; height:38px; border-radius:50%; background:#12301b; color:var(--green); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:24px; }
+  .term { position:absolute; background:#0a0e13; border:1px solid var(--line); border-radius:18px; padding:34px 42px; box-shadow:0 30px 80px #000c; }
+  .term .ln { font-family: "Cascadia Code", Consolas, "DejaVu Sans Mono", monospace; font-size:28px; line-height:1.8; white-space:pre; }
+  .stat { position:absolute; width:500px; text-align:left; }
+  .stat .n { font-size:110px; font-weight:800; letter-spacing:-3px; }
+  .stat .l { font-size:30px; color:#c6d2de; }
+  .sub { position:absolute; left:0; right:0; bottom:46px; text-align:center; font-size:28px; color:var(--dim); }
+  .bubble { position:absolute; padding:16px 24px; border-radius:20px; font-size:30px; max-width:520px; }
+  .me { background:#2b5278; } .bot { background:#1c2733; }
+</style>
+</head>
+<body>
+
+<!-- 0 · intro -->
+<section class="scene" id="s0">
+  <div class="grid"></div><div class="glow" style="left:360px;top:-300px;background:var(--blue)"></div>
+  <img id="s0logo" class="abs" src="../../../demo-bot/public/brand/avatar.png" style="left:810px;top:250px;width:300px;height:300px;border-radius:50%;box-shadow:0 0 0 6px #ffffff10">
+  <div id="s0t" class="abs h1" style="left:0;right:0;top:600px;text-align:center">BotProof</div>
+  <div id="s0s" class="abs p" style="left:0;right:0;top:730px;text-align:center">Your bot works on your laptop. BotProof proves it works in Telegram.</div>
+</section>
+
+<!-- 1 · problem -->
+<section class="scene" id="s1">
+  <div class="grid"></div><div class="glow" style="left:-300px;top:200px;background:var(--red)"></div>
+  <div class="win" id="s1phone" style="left:150px;top:120px;width:620px;height:840px">
+    <div class="bar"><i></i><i></i><i></i><span>Telegram · testing by hand</span></div>
+    <div class="view" style="height:794px;background:#0e1621">
+      <div class="bubble me" id="b1" style="right:24px;top:30px">/start</div>
+      <div class="bubble bot" id="b2" style="left:24px;top:110px">Welcome to Brew Bot ☕</div>
+      <div class="bubble me" id="b3" style="right:24px;top:200px">tap 📋 Open menu</div>
+      <div class="bubble me" id="b4" style="right:24px;top:290px">tap Next ▶</div>
+      <div class="bubble me" id="b5" style="right:24px;top:380px">+2348012345678</div>
+      <div class="bubble bot" id="b6" style="left:24px;top:470px">✅ Confirmed</div>
+      <div class="abs" id="b7" style="left:0;right:0;top:600px;text-align:center;font-size:40px;color:var(--amber);font-weight:700">↻ again · after every change</div>
+    </div>
+  </div>
+  <div class="abs" style="left:880px;top:200px;width:900px">
+    <div class="kicker" id="s1k">The problem</div>
+    <div class="h2" id="s1a" style="margin-top:22px">Telegram bots are tested by hand.</div>
+    <div class="p" id="s1b" style="margin-top:40px">Unit tests mock the Bot API, so they never see what a user sees:</div>
+    <div id="s1c" style="margin-top:30px">
+      <span class="chip" id="c1">a button that does nothing</span>
+      <span class="chip" id="c2">a keyboard that never goes away</span>
+      <span class="chip" id="c3">a reply that only breaks in a real group</span>
+    </div>
+  </div>
+</section>
+
+<!-- 2 · what -->
+<section class="scene" id="s2">
+  <div class="grid"></div><div class="glow" style="left:600px;top:-200px;background:var(--blue)"></div>
+  <div class="abs kicker" id="s2k" style="left:120px;top:90px">How BotProof works</div>
+  <div class="win" id="s2code" style="left:120px;top:160px;width:820px;height:760px">
+    <div class="bar"><i></i><i></i><i></i><span>botproof/flows/private/menu_pagination_test.md</span></div>
+    <div class="view" style="height:714px;padding:28px 34px">
+      <div class="code" id="s2lines"></div>
+    </div>
+  </div>
+  <div class="abs" id="s2kane" style="left:1000px;top:470px;width:220px;text-align:center">
+    <div style="font-size:30px;font-weight:800;color:var(--blue)">Kane CLI</div>
+    <div style="font-size:22px;color:var(--dim);margin-top:6px">by TestMu AI</div>
+    <div style="height:6px;margin-top:18px;border-radius:3px;background:linear-gradient(90deg,var(--blue),#7ee7ff)" id="s2bar"></div>
+  </div>
+  <div class="win" id="s2tg" style="left:1280px;top:160px;width:520px;height:760px">
+    <div class="bar"><i></i><i></i><i></i><span>web.telegram.org/k/</span></div>
+    <div class="view" style="height:714px"><img src="../../../docs/screenshots/3-inline-menu-edit.png" id="s2img"></div>
+  </div>
+  <div class="sub" id="s2sub">Plain English → Kane CLI drives real Telegram Web, logged in as a test account → PASS / FAIL + evidence</div>
+</section>
+
+<!-- 3 · private chat -->
+<section class="scene" id="s3">
+  <div class="grid"></div><div class="glow" style="left:900px;top:300px;background:var(--green)"></div>
+  <div class="win" id="s3win" style="left:140px;top:60px;width:650px;height:960px">
+    <div class="bar"><i></i><i></i><i></i><span>web.telegram.org/k/#@botproofbot</span></div>
+    <div class="view" style="height:914px" id="s3view"><div class="cam" id="s3cam">
+      <img src="../../../docs/screenshots/3-inline-menu-edit.png" id="s3img">
+      <div class="hl" id="s3h1" style="border-color:var(--blue)"></div>
+      <div class="hl" id="s3h2" style="border-color:var(--green)"></div>
+    </div></div>
+  </div>
+  <div class="tag" id="s3t1" style="left:820px;top:300px;background:#10283a;color:#7cc8ff">/start → main menu with buttons</div>
+  <div class="tag" id="s3t2" style="left:820px;top:560px;background:#12301b;color:#7ee787">Next ▶ edits the same message · page 1/2</div>
+  <div class="abs" id="s3list" style="left:1360px;top:150px">
+    <div class="kicker" style="margin-bottom:30px">Passing live</div>
+    <div class="tick" id="k1"><span class="c">✓</span>start</div>
+    <div class="tick" id="k2"><span class="c">✓</span>main_menu</div>
+    <div class="tick" id="k3"><span class="c">✓</span>menu_pagination</div>
+    <div class="tick" id="k4"><span class="c">✓</span>item_details</div>
+    <div class="tick" id="k5"><span class="c">✓</span>formatting</div>
+    <div class="tick" id="k6"><span class="c">✓</span>conversation_cancel</div>
+  </div>
+</section>
+
+
+<!-- 3b · mini app -->
+<section class="scene" id="sM">
+  <div class="grid"></div><div class="glow" style="left:600px;top:200px;background:var(--blue)"></div>
+  <div class="abs kicker" style="left:0;right:0;top:40px;text-align:center" id="sMk">Mini App · inside Telegram</div>
+  <div class="win" id="sMa" style="left:250px;top:90px;width:620px;height:870px">
+    <div class="bar"><i></i><i></i><i></i><span>Order confirmed → 💳 Checkout opens the Mini App</span></div>
+    <div class="view" style="height:824px" id="sMva"><div class="cam" id="sMca"><img src="../../../docs/screenshots/6-miniapp-order.png"></div></div>
+  </div>
+  <div class="win" id="sMb" style="left:1050px;top:90px;width:620px;height:870px">
+    <div class="bar"><i></i><i></i><i></i><span>After paying in the Mini App</span></div>
+    <div class="view" style="height:824px" id="sMvb"><div class="cam" id="sMcb"><img src="../../../docs/screenshots/7-miniapp-paid.png"></div></div>
+  </div>
+  <div class="tag" id="sMt1" style="left:250px;top:978px;background:#10283a;color:#7cc8ff">Kane: confirm → Checkout → pickup time → Pay</div>
+  <div class="tag" id="sMt2" style="left:1050px;top:978px;background:#12301b;color:#7ee787">Mini App data reached the bot · ✅ Payment received</div>
+  <div class="abs" id="sMnote" style="left:0;right:0;top:1032px;text-align:center;font-size:20px;color:var(--dim)">phone photos of the chat after Kane's passing run, 22 Nov</div>
+</section>
+
+<!-- 4 · group & channel -->
+<section class="scene" id="s4">
+  <div class="grid"></div><div class="glow" style="left:500px;top:300px;background:var(--blue)"></div>
+  <div class="abs kicker" style="left:0;right:0;top:40px;text-align:center" id="s4k">Same bot · in a group and in a channel</div>
+  <div class="win" id="s4a" style="left:250px;top:100px;width:620px;height:920px">
+    <div class="bar"><i></i><i></i><i></i><span>Group · testingbotproofgroup</span></div>
+    <div class="view" style="height:874px" id="s4va"><div class="cam" id="s4ca"><img src="../../../docs/screenshots/4-group-order.png"><div class="hl" id="s4h1" style="border-color:var(--green)"></div></div></div>
+  </div>
+  <div class="win" id="s4b" style="left:1050px;top:100px;width:620px;height:920px">
+    <div class="bar"><i></i><i></i><i></i><span>Channel · testingbotproof</span></div>
+    <div class="view" style="height:874px" id="s4vb"><div class="cam" id="s4cb"><img src="../../../docs/screenshots/5-channel-post.png"><div class="hl" id="s4h2" style="border-color:var(--blue)"></div></div></div>
+  </div>
+  <div class="tag" id="s4t1" style="left:300px;top:960px;background:#12301b;color:#7ee787">group order edited with who tapped</div>
+  <div class="tag" id="s4t2" style="left:1100px;top:960px;background:#10283a;color:#7cc8ff">channel post · 👍 / 👎 votes</div>
+</section>
+
+<!-- 5 · bug + loop -->
+<section class="scene" id="s5">
+  <div class="grid"></div><div class="glow" id="s5glow" style="left:400px;top:100px;background:var(--red)"></div>
+  <!-- A: the bug -->
+  <div id="s5A">
+    <div class="win" id="s5wA" style="left:140px;top:60px;width:650px;height:960px">
+      <div class="bar"><i></i><i></i><i></i><span>Group · anonymous admin sends /close</span></div>
+      <div class="view" style="height:914px" id="s5vA"><div class="cam" id="s5cA"><img src="../../../docs/screenshots/1-bug-close-refused.png" id="s5imgA"><div class="hl" id="s5hA" style="border-color:var(--red)"></div></div></div>
+    </div>
+    <div class="abs" style="left:880px;top:250px;width:900px">
+      <div class="kicker" style="color:var(--red)" id="s5Ak">A real bug · caught 22 Nov · not staged</div>
+      <div class="h2" id="s5Aa" style="margin-top:20px">The group's own owner was refused.</div>
+      <div class="p" id="s5Ab" style="margin-top:30px">Kane: <i>“the bot replied that only group admins can close the order.”</i></div>
+      <div class="p" id="s5Ac" style="margin-top:30px;color:var(--dim)">Anonymous admins post as <b style="color:#c6d2de">@GroupAnonymousBot</b>. The bot asked if that placeholder was an admin. It never is.</div>
+    </div>
+  </div>
+  <!-- B: the loop -->
+  <div id="s5B">
+    <div class="abs kicker" style="left:0;right:0;top:110px;text-align:center">botproof fix · the closed loop</div>
+    <div class="node" id="n1" style="left:110px;top:300px"><b style="color:var(--red)">Kane: FAIL</b><small>step 3 · Close as owner</small></div>
+    <div class="node" id="n2" style="left:560px;top:300px"><b>Brief</b><small>step · remark · screenshot · source</small></div>
+    <div class="node" id="n3" style="left:1010px;top:300px"><b>Claude Code</b><small>patches bot code only</small></div>
+    <div class="node" id="n4" style="left:1460px;top:300px"><b>Redeploy</b><small>Vercel</small></div>
+    <div class="node" id="n5" style="left:785px;top:620px"><b style="color:var(--green)">Kane: PASS</b><small>after 1 attempt</small></div>
+    <div class="arrow" id="a1" style="left:415px;top:374px;width:140px"></div>
+    <div class="arrow" id="a2" style="left:865px;top:374px;width:140px"></div>
+    <div class="arrow" id="a3" style="left:1315px;top:374px;width:140px"></div>
+    <div class="arrow" id="a4" style="left:1610px;top:455px;width:560px;transform:rotate(150deg)"></div>
+    <div class="tag" id="lock" style="left:640px;top:860px;background:#2b2410;color:var(--amber)">🔒 flow files & BotProof locked · hook + git check · max 3 attempts</div>
+  </div>
+  <!-- C: the patch -->
+  <div id="s5C">
+    <div class="abs kicker" style="left:160px;top:150px">Claude's patch · demo-bot/src/bot.ts</div>
+    <div class="win" style="left:160px;top:210px;width:1600px;height:430px">
+      <div class="bar"><i></i><i></i><i></i><span>attempt 1 · diff</span></div>
+      <div class="view" style="height:384px;padding:34px 40px"><div class="code" id="s5diff" style="font-size:30px"></div></div>
+    </div>
+    <div class="p" id="s5Cp" style="position:absolute;left:160px;top:700px;width:1600px">Only admins can post <i>as the group</i>, so a message whose sender is the group itself comes from an admin.</div>
+  </div>
+  <!-- D: the pass -->
+  <div id="s5D">
+    <div class="win" id="s5wD" style="left:140px;top:60px;width:650px;height:960px">
+      <div class="bar"><i></i><i></i><i></i><span>Group · after the fix</span></div>
+      <div class="view" style="height:914px" id="s5vD"><div class="cam" id="s5cD"><img src="../../../docs/screenshots/2-fix-close-works.png" id="s5imgD"><div class="hl" id="s5hD" style="border-color:var(--green)"></div><div class="hl" id="s5hD2" style="border-color:var(--green)"></div></div></div>
+    </div>
+    <div class="abs" style="left:880px;top:300px;width:900px">
+      <div class="kicker" style="color:var(--green)">Kane re-ran the flow</div>
+      <div class="h2" style="margin-top:20px" id="s5Da">PASS. The order closes.</div>
+      <div class="p" style="margin-top:30px;color:var(--dim)" id="s5Db">Every attempt, its diff and the re-run are in<br><span style="color:#c6d2de">botproof/runs/fix-2026-11-22T18-25-38/LOG.md</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 5b · install -->
+<section class="scene" id="s6">
+  <div class="grid"></div><div class="glow" style="left:500px;top:100px;background:var(--blue)"></div>
+  <div class="abs kicker" style="left:180px;top:150px">Try it</div>
+  <div class="term" style="left:180px;top:220px;width:1560px">
+    <div class="ln" id="t1"></div><div class="ln" id="t2"></div><div class="ln" id="t3"></div><div class="ln" id="t4"></div><div class="ln" id="t5"></div>
+  </div>
+  <div class="sub" id="s6sub" style="color:var(--blue);font-size:34px;bottom:140px">github.com/ahmardchain/Botproof</div>
+</section>
+
+<!-- 6 · close -->
+<section class="scene" id="s7">
+  <div class="grid"></div><div class="glow" style="left:400px;top:0px;background:var(--green)"></div>
+  <div id="s7A">
+    <div class="abs kicker" style="left:160px;top:180px">It also knows when <u>not</u> to patch</div>
+    <div class="node" id="m1" style="left:160px;top:270px;width:760px;height:190px;align-items:flex-start;padding:0 40px"><b>Telegram tip covered the screen</b><small>Kane's triage: automation → bot untouched</small></div>
+    <div class="node" id="m2" style="left:1000px;top:270px;width:760px;height:190px;align-items:flex-start;padding:0 40px"><b>Telegram still reconnecting</b><small>Kane misclicked → BotProof stopped → bot untouched</small></div>
+  </div>
+  <div id="s7B">
+    <div class="stat" id="st1" style="left:160px;top:580px"><div class="n" style="color:var(--green)" id="st1n">0</div><div class="l">flows passing live in Telegram Web</div></div>
+    <div class="stat" id="st2" style="left:720px;top:580px"><div class="n" style="color:var(--red)">1</div><div class="l">real bug caught by Kane, fixed by the loop</div></div>
+    <div class="stat" id="st3" style="left:1280px;top:580px"><div class="n" style="color:var(--blue)">All</div><div class="l">runs sealed as Kane evidence packs</div></div>
+  </div>
+  <div id="s7C" class="abs" style="left:0;right:0;top:330px;text-align:center">
+    <img src="../../../demo-bot/public/brand/avatar.png" style="width:150px;height:150px;border-radius:50%">
+    <div class="h1" style="margin-top:20px">BotProof</div>
+    <div class="p" style="margin-top:18px">Your bot works on your laptop. BotProof proves it works in Telegram.</div>
+    <div class="p" style="margin-top:30px;color:var(--blue)">github.com/ahmardchain/Botproof</div>
+  </div>
+</section>
+
+<script>
+const D = window.DUR; // scene durations in seconds, injected by render-film.mjs
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const ease = (x) => 1 - Math.pow(1 - clamp(x), 3);
+const io = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const p = (t, a, b) => ease((t - a) / (b - a));
+function show(el, k, dy = 30) { el.style.opacity = k; el.style.transform = `translateY(${(1 - k) * dy}px)`; }
+function win(img, view, k, from = 0, to = 0.35) {
+  // pan an image inside its window from `from` to `to` (fraction of the scrollable height)
+  const vh = view.clientHeight, ih = img.clientHeight;
+  img.style.transform = `translateY(${-(ih - vh) * (from + (to - from) * io(clamp(k)))}px)`;
+}
+function hl(el, img, box, k, color) {
+  // box in screenshot pixels (1110×1620); follows the image's current transform
+  const s = img.clientWidth / 1110;
+  const ty = parseFloat((img.style.transform.match(/-?[\d.]+/) || [0])[0]);
+  const pad = 14;
+  el.style.left = `${box[0] * s - pad}px`; el.style.top = `${box[1] * s - pad + ty}px`;
+  el.style.width = `${(box[2] - box[0]) * s + 2 * pad}px`; el.style.height = `${(box[3] - box[1]) * s + 2 * pad}px`;
+  el.style.opacity = k; el.style.boxShadow = `0 0 ${40 * k}px ${color}`;
+}
+// Camera over a screenshot (1110×1620 px): keyframes [{t, box}] where box=[x0,y0,x1,y1] or null (whole width, bottom).
+function camState(view, box) {
+  const Wv = view.clientWidth, Hv = view.clientHeight, s = Wv / 1110, Hi = 1620 * s;
+  if (!box) return { z: 1, x: 0, y: Math.min(0, Hv - Hi) };
+  const z = clamp(0.82 * 1110 / (box[2] - box[0]), 1, 2.3);
+  const cx = (box[0] + box[2]) / 2 * s, cy = (box[1] + box[3]) / 2 * s;
+  const x = clamp(Wv / 2 - z * cx, Wv - z * Wv, 0), y = clamp(Hv / 2 - z * cy, Hv - z * Hi, 0);
+  return { z, x, y };
+}
+function cam(view, camEl, keys, t) {
+  let a = keys[0], b = keys[keys.length - 1];
+  for (let i = 0; i < keys.length - 1; i++) if (t >= keys[i].t && t <= keys[i + 1].t) { a = keys[i]; b = keys[i + 1]; }
+  const k = a === b ? 1 : io(clamp((t - a.t) / Math.max(0.001, b.t - a.t)));
+  const A = camState(view, a.box), B = camState(view, b.box);
+  const z = A.z + (B.z - A.z) * k, x = A.x + (B.x - A.x) * k, y = A.y + (B.y - A.y) * k;
+  camEl.style.transform = `translate(${x}px, ${y}px) scale(${z})`;
+}
+function box(el, view, b, k, color) {
+  const s = view.clientWidth / 1110, pad = 10;
+  el.style.left = `${b[0] * s - pad}px`; el.style.top = `${b[1] * s - pad}px`;
+  el.style.width = `${(b[2] - b[0]) * s + 2 * pad}px`; el.style.height = `${(b[3] - b[1]) * s + 2 * pad}px`;
+  el.style.opacity = k; el.style.borderWidth = "3px"; el.style.boxShadow = `0 0 ${30 * k}px ${color}`;
+}
+function typed(el, text, k) { el.textContent = text.slice(0, Math.round(text.length * clamp(k))); }
+
+const FLOW = `---
+tags: [smoke, keyboard, inline]
+---
+# Inline menu paginates by editing the same message
+
+## Open the menu
+Type /menu and press Enter. Verify "Brew Bot menu
+— page 1/2" appears with a "Next ▶️" button.
+
+## Next page
+Click "Next ▶️". Verify the SAME message now reads
+"page 2/2" and no new bot message was added.
+
+## Previous page
+Click "◀️ Prev". Verify it is back to "page 1/2".`;
+const DIFF = [
+  ["  ", 'bot.chatType(["group", "supergroup"]).command("close", async (ctx) => {'],
+  ["- ", "  if (!(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {"],
+  ["+ ", "  // An anonymous admin posts as the group itself"],
+  ["+ ", "  const anonymousAdmin = ctx.msg.sender_chat?.id === ctx.chat.id;"],
+  ["+ ", "  if (!anonymousAdmin && !(await isAdmin(ctx, ctx.chat.id, ctx.from.id))) {"],
+];
+const TERM = [
+  ["$ ", "npm install -g @testmuai/kane-cli && kane-cli login"],
+  ["$ ", "git clone https://github.com/ahmardchain/Botproof && cd Botproof && npm install"],
+  ["$ ", "botproof init          # log a test account into Telegram Web"],
+  ["$ ", "botproof run --tag smoke"],
+  ["$ ", "botproof run menu_pagination --record && botproof video"],
+];
+
+const scenes = [
+  (t, d) => { // intro
+    $("s0logo").style.transform = `scale(${0.6 + 0.4 * ease(t / 1)})`; $("s0logo").style.opacity = ease(t / 0.8);
+    show($("s0t"), p(t, 0.5, 1.3)); show($("s0s"), p(t, 1.1, 2.0));
+  },
+  (t, d) => { // problem
+    show($("s1phone"), p(t, 0, 0.8), 60);
+    ["b1","b2","b3","b4","b5","b6"].forEach((id, i) => show($(id), p(t, 1 + i * 0.9, 1.5 + i * 0.9), 20));
+    $("b7").style.opacity = p(t, 6.8, 7.4) * (0.75 + 0.25 * Math.sin(t * 4));
+    show($("s1k"), p(t, 0.4, 1.2)); show($("s1a"), p(t, 0.8, 1.8));
+    show($("s1b"), p(t, 9, 10)); show($("c1"), p(t, 12.5, 13.3)); show($("c2"), p(t, 14.2, 15)); show($("c3"), p(t, 16, 16.8));
+  },
+  (t, d) => { // what
+    show($("s2k"), p(t, 0, 0.8)); show($("s2code"), p(t, 0.2, 1.0), 40);
+    typed($("s2lines"), FLOW, (t - 1.2) / 7);
+    show($("s2kane"), p(t, 8.5, 9.5)); $("s2bar").style.width = `${100 * p(t, 9.5, 12)}%`;
+    show($("s2tg"), p(t, 10.5, 11.6), 40); win($("s2img"), $("s2img").parentElement, (t - 11) / (d - 11), 0.1, 0.45);
+    show($("s2sub"), p(t, 14, 15));
+  },
+  (t, d) => { // private
+    show($("s3win"), p(t, 0, 0.8), 40);
+    const v3 = $("s3view"), B1 = [10, 280, 670, 680], B2 = [10, 730, 400, 1085];
+    cam(v3, $("s3cam"), [{ t: 0, box: null }, { t: 2.5, box: null }, { t: 4.5, box: B1 }, { t: 9, box: B1 }, { t: 11, box: B2 }, { t: 16, box: B2 }, { t: 18.5, box: null }], t);
+    box($("s3h1"), v3, B1, p(t, 4.2, 5) * (1 - p(t, 9, 10)), "#2aabee");
+    box($("s3h2"), v3, B2, p(t, 10.8, 11.6) * (1 - p(t, 16, 17)), "#3fb950");
+    show($("s3t1"), p(t, 3.3, 4.2) * (1 - p(t, 10, 11))); show($("s3t2"), p(t, 10, 11));
+    ["k1","k2","k3","k4","k5","k6"].forEach((id, i) => show($(id), p(t, 13 + i * 0.6, 13.5 + i * 0.6), 20));
+  },
+  (t, d) => { // mini app
+    show($("sMk"), p(t, 0, 0.8));
+    $("sMa").style.opacity = p(t, 0.3, 1.1); $("sMa").style.transform = `translateX(${(1 - p(t, 0.3, 1.3)) * -120}px)`;
+    $("sMb").style.opacity = p(t, 8, 8.8); $("sMb").style.transform = `translateX(${(1 - p(t, 8, 9)) * 120}px)`;
+    // tall phone photos: scroll from the middle down to the bottom of the chat
+    const pan = (camEl, view, k) => {
+      const range = Math.max(0, camEl.clientHeight - view.clientHeight);
+      camEl.style.transform = `translateY(${-range * (0.45 + 0.55 * io(clamp(k)))}px)`;
+    };
+    pan($("sMca"), $("sMva"), t / 7); pan($("sMcb"), $("sMvb"), (t - 8) / 5);
+    show($("sMnote"), p(t, 2, 3));
+    show($("sMt1"), p(t, 3, 4)); show($("sMt2"), p(t, 10, 11));
+  },
+  (t, d) => { // group & channel
+    show($("s4k"), p(t, 0, 0.8));
+    $("s4a").style.opacity = p(t, 0.3, 1.1); $("s4a").style.transform = `translateX(${(1 - p(t, 0.3, 1.3)) * -120}px)`;
+    $("s4b").style.opacity = p(t, 6.5, 7.3); $("s4b").style.transform = `translateX(${(1 - p(t, 6.5, 7.5)) * 120}px)`;
+    const G = [70, 1240, 520, 1525], C = [5, 1170, 400, 1395];
+    cam($("s4va"), $("s4ca"), [{ t: 0, box: null }, { t: 1.5, box: null }, { t: 3.5, box: G }], t);
+    cam($("s4vb"), $("s4cb"), [{ t: 6.5, box: null }, { t: 8, box: null }, { t: 10, box: C }], t);
+    box($("s4h1"), $("s4va"), G, p(t, 3.3, 4.1), "#3fb950");
+    box($("s4h2"), $("s4vb"), C, p(t, 9.8, 10.6), "#2aabee");
+    show($("s4t1"), p(t, 3, 4)); show($("s4t2"), p(t, 9.5, 10.5));
+  },
+  (t, d) => { // bug + loop (four phases)
+    const A = 15, B = 27, C = 35;
+    $("s5A").style.opacity = 1 - p(t, A - 0.6, A);
+    $("s5B").style.opacity = p(t, A, A + 0.6) * (1 - p(t, B - 0.6, B));
+    $("s5C").style.opacity = p(t, B, B + 0.6) * (1 - p(t, C - 0.6, C));
+    $("s5D").style.opacity = p(t, C, C + 0.6);
+    $("s5glow").style.background = t < C ? "var(--red)" : "var(--green)";
+    // A
+    show($("s5wA"), p(t, 0, 0.8), 40);
+    const RA = [85, 1025, 615, 1165];
+    cam($("s5vA"), $("s5cA"), [{ t: 0, box: null }, { t: 2, box: null }, { t: 4.5, box: RA }], t);
+    box($("s5hA"), $("s5vA"), RA, p(t, 4.8, 5.6), "#f85149");
+    show($("s5Ak"), p(t, 0.5, 1.3)); show($("s5Aa"), p(t, 2.5, 3.5)); show($("s5Ab"), p(t, 5.5, 6.5)); show($("s5Ac"), p(t, 9, 10));
+    // B
+    const steps = [["n1"], ["a1", "n2"], ["a2", "n3"], ["a3", "n4"], ["a4", "n5"]];
+    steps.forEach((ids, i) => ids.forEach((id) => {
+      const k = p(t, A + 0.8 + i * 1.6, A + 1.4 + i * 1.6);
+      if (id[0] === "a") { $(id).style.opacity = k; $(id).style.background = k > 0.99 ? "#3b4b5d" : "var(--line)"; }
+      else { show($(id), k, 20); $(id).style.borderColor = id === "n1" ? "var(--red)" : id === "n5" ? "var(--green)" : id === "n3" ? "var(--blue)" : "var(--line)"; }
+    }));
+    show($("lock"), p(t, A + 8.8, A + 9.6));
+    // C
+    const lines = DIFF.map(([m, s]) => m + s);
+    const k = clamp((t - B - 0.6) / 5);
+    const total = lines.join("\n").length; let left = Math.round(total * k);
+    $("s5diff").innerHTML = lines.map(([...l], i) => {
+      const s = lines[i]; const shown = s.slice(0, Math.max(0, Math.min(s.length, left))); left -= s.length + 1;
+      const col = s.startsWith("+") ? "var(--green)" : s.startsWith("-") ? "var(--red)" : "#c6d2de";
+      return `<span style="color:${col}">${shown.replace(/&/g, "&amp;").replace(/</g, "&lt;")}</span>`;
+    }).join("\n");
+    show($("s5Cp"), p(t, B + 4.5, B + 5.5));
+    // D
+    show($("s5wD"), p(t, C, C + 0.8), 40);
+    const RD1 = [80, 1210, 430, 1360], RD2 = [80, 1435, 600, 1525], RD = [80, 1200, 600, 1530];
+    cam($("s5vD"), $("s5cD"), [{ t: C, box: null }, { t: C + 1.5, box: null }, { t: C + 3.5, box: RD }], t);
+    box($("s5hD"), $("s5vD"), RD1, p(t, C + 3.6, C + 4.3), "#3fb950");
+    box($("s5hD2"), $("s5vD"), RD2, p(t, C + 4.4, C + 5.1), "#3fb950");
+    show($("s5Da"), p(t, C + 1, C + 2)); show($("s5Db"), p(t, C + 4, C + 5));
+  },
+  (t, d) => { // install
+    const per = (d - 3) / TERM.length;
+    TERM.forEach(([pr, cmd], i) => {
+      const k = clamp((t - 0.8 - i * per) / (per * 0.7));
+      $("t" + (i + 1)).innerHTML = k <= 0 ? "" : `<span style="color:var(--green)">${pr}</span>${cmd.slice(0, Math.round(cmd.length * k)).replace(/#.*$/, (m) => `<span style="color:var(--dim)">${m}</span>`)}`;
+    });
+    show($("s6sub"), p(t, d - 4, d - 3));
+  },
+  (t, d) => { // close
+    const C = d - 9.5;
+    $("s7A").style.opacity = 1 - p(t, C - 0.6, C);
+    $("s7B").style.opacity = 1 - p(t, C - 0.6, C);
+    show($("m1"), p(t, 0.5, 1.3), 30); show($("m2"), p(t, 4, 4.8), 30);
+    show($("st1"), p(t, 9, 10)); show($("st2"), p(t, 10, 11)); show($("st3"), p(t, 11, 12));
+    $("st1n").textContent = String(Math.round(11 * p(t, 9, 11)));
+    show($("s7C"), p(t, C, C + 1.2), 30);
+  },
+];
+
+const ALL = ["s0", "s1", "s2", "s3", "sM", "s4", "s5", "s6", "s7"];
+const IDS = window.SCENES || ALL.filter((id) => id !== "sM");
+const FN = Object.fromEntries(ALL.map((id, i) => [id, scenes[i]]));
+ALL.forEach((id) => { if (!IDS.includes(id)) document.getElementById(id).remove(); });
+window.render = (t) => {
+  let start = 0;
+  D.forEach((d, i) => {
+    const el = document.getElementById(IDS[i]);
+    const lt = t - start;
+    const vis = lt >= -0.01 && lt < d;
+    if (vis) {
+      el.style.opacity = Math.min(p(lt, 0, 0.45), 1 - p(lt, d - 0.45, d) * (i === D.length - 1 ? 0 : 1));
+      FN[IDS[i]](lt, d);
+    } else el.style.opacity = 0;
+    start += d;
+  });
+};
+</script>
+</body>
+</html>
