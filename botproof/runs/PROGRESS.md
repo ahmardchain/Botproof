@@ -8,3 +8,4 @@
 | 2026-11-22 21:14 | botproof/flows/channel/channel_special_vote_test.md | error | – | – | – | error: failed to start: connect_over_cdp: connect ECONNREFUSED 127.0.0.1:52257 |
 | 2026-11-22 21:15 | botproof/flows/private/start_test.md | error | – | – | – | error: failed to start: connect_over_cdp: connect ECONNREFUSED 127.0.0.1:59174 |
 | 2026-11-22 21:16 | botproof/flows/channel/channel_comments_test.md | error | – | – | – | error: Chrome launch failed: fetch failed |
+| 2026-11-22 21:17 | botproof/flows/private/menu_pagination_test.md | error | – | – | – | error: Chrome launch failed: fetch failed |
