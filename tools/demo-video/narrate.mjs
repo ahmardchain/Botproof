@@ -1,8 +1,11 @@
 #!/usr/bin/env node
-// Free narration for the demo video: Microsoft Edge's online neural voices via the
-// msedge-tts package (no account, no key). Falls back to the Windows built-in voice
-// (System.Speech) when the Edge service can't be reached.
-// Usage (repo root): node tools/demo-video/narrate.mjs   → tools/demo-video/audio/<segment>.mp3
+// Free narration for the demo video, no account or API key:
+//   edge    Microsoft Edge's online neural voices (msedge-tts)            — most natural
+//   google  Google Translate's voice (google-tts-api)
+//   windows the Windows built-in voice (System.Speech), offline
+// Default tries them in that order. Force one with --engine=edge|google|windows.
+// Usage (repo root): node tools/demo-video/narrate.mjs [--engine=google] [--force]
+//   → tools/demo-video/audio/<segment>.mp3
 import { execFileSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
@@ -48,6 +51,16 @@ async function edgeInner(text, out) {
   rmSync(dir, { recursive: true, force: true });
 }
 
+async function google(text, out) {
+  const { getAllAudioBase64 } = require("google-tts-api");
+  const parts = await getAllAudioBase64(text, { lang: "en", slow: false, splitPunct: ",.?!:;", timeout: 15000 });
+  const raw = out.replace(/\.mp3$/, ".raw.mp3");
+  writeFileSync(raw, Buffer.concat(parts.map((p) => Buffer.from(p.base64, "base64"))));
+  // re-encode the joined pieces into one clean file
+  execFileSync(ffmpeg, ["-y", "-hide_banner", "-loglevel", "error", "-i", raw, "-ac", "1", "-b:a", "96k", out]);
+  rmSync(raw, { force: true });
+}
+
 function windowsVoice(text, out) {
   const wav = out.replace(/\.mp3$/, ".wav");
   const txt = join(tmpdir(), `botproof-tts-${process.pid}.txt`);
@@ -59,22 +72,31 @@ function windowsVoice(text, out) {
   rmSync(wav, { force: true });
 }
 
+const engineArg = process.argv.find((a) => a.startsWith("--engine="))?.slice(9);
+const engines = engineArg ? [engineArg] : ["edge", "google", "windows"];
+const run = { edge, google, windows: async (t, o) => windowsVoice(t, o) };
+
 for (const [id, text] of Object.entries(segments)) {
   const out = join(audioDir, `${id}.mp3`);
   if (existsSync(out) && !force) {
     console.log(`= ${id} (exists; --force to redo)`);
     continue;
   }
-  try {
-    await edge(text, out);
-    console.log(`✔ ${id}  (Edge voice ${voice})`);
-  } catch (e) {
-    if (process.platform !== "win32") {
-      console.error(`✘ ${id}: Edge voice unavailable (${e.message}) and no Windows voice on this OS`);
-      process.exit(2);
+  let done = false;
+  for (const engine of engines) {
+    if (!run[engine]) throw new Error(`unknown engine ${engine} (edge|google|windows)`);
+    if (engine === "windows" && process.platform !== "win32") continue;
+    try {
+      await run[engine](text, out);
+      console.log(`✔ ${id}  (${engine}${engine === "edge" ? ` ${voice}` : ""})`);
+      done = true;
+      break;
+    } catch (e) {
+      console.log(`  ${engine} voice failed for ${id}: ${e.message}`);
     }
-    console.log(`  Edge voice unavailable (${e.message}); using the Windows voice for ${id}`);
-    windowsVoice(text, out);
-    console.log(`✔ ${id}  (Windows voice)`);
+  }
+  if (!done) {
+    console.error(`✘ ${id}: no free voice engine worked`);
+    process.exit(2);
   }
 }

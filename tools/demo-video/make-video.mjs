@@ -151,23 +151,32 @@ function stats() {
 function visual(v) {
   switch (v.type) {
     case "title":
-      return [{ png: render(page(`<h1>${esc(v.title)}</h1><div class="sub">${esc(v.subtitle ?? "")}</div>`)), weight: 2 }];
-    case "bullets":
-      return [{ png: render(page(`<h2>${esc(v.title)}</h2><ul>${v.items.map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`)), weight: 2.5 }];
+      return [{ png: render(page(`<h1>${esc(v.title)}</h1><div class="sub">${esc(v.subtitle ?? "")}</div>`)), weight: 2, motion: "zoom" }];
+    case "bullets": {
+      // motion: the title lands first, then each bullet appears in turn (hidden bullets keep the layout fixed)
+      const steps = v.items.length + 1;
+      return Array.from({ length: steps }, (_, k) => ({
+        png: render(page(`<h2>${esc(v.title)}</h2><ul>${v.items.map((it, j) => `<li style="${j < k ? "" : "visibility:hidden"}">${esc(it)}</li>`).join("")}</ul>`)),
+        weight: (k === 0 ? 0.35 : k === steps - 1 ? 1.25 : 0.7) * (2.5 / (0.35 + 1.25 + 0.7 * Math.max(0, steps - 2))),
+        motion: "still",
+        fadeIn: k === 0,
+        fadeOut: k === steps - 1,
+      }));
+    }
     case "code": {
       let text = v.text ?? readFileSync(join(root, v.file), "utf8");
       if (v.from && text.includes(v.from)) text = text.slice(text.indexOf(v.from));
       text = text.split("\n").slice(0, 26).join("\n");
-      return [{ png: render(page(`<h2>${esc(v.title)}</h2><pre>${codeHtml(text)}</pre>`)), weight: 3 }];
+      return [{ png: render(page(`<h2>${esc(v.title)}</h2><pre>${codeHtml(text)}</pre>`)), weight: 3, motion: "zoom" }];
     }
     case "pack":
-      return packFrames(v).map((png) => ({ png, weight: 1 }));
+      return packFrames(v).map((png, i) => ({ png, weight: 1, motion: i % 2 ? "panUp" : "panDown" }));
     case "stats":
       return stats().map((png) => ({ png, weight: 2.5 }));
     case "image": {
       const img = join(root, v.file);
       if (!existsSync(img)) return [];
-      return [{ png: render(page(`<div class="frame"><img src="${pathToFileURL(img).href}"></div><div class="cap"><b>Kane</b>${esc(v.label ?? "")}</div>`, false)), weight: v.weight ?? 2.5 }];
+      return [{ png: render(page(`<div class="frame"><img src="${pathToFileURL(img).href}"></div><div class="cap"><b>Kane</b>${esc(v.label ?? "")}</div>`, false)), weight: v.weight ?? 2.5, motion: "panDown" }];
     }
     case "recording": {
       // A BotProof --record capture of Kane driving Telegram Web: newest folder whose name ends with -<flow>.
@@ -223,14 +232,25 @@ for (const seg of story.segments) {
     const d = (f.weight / wsum) * total;
     const clip = join(build, `${seg.id}-${String(i).padStart(2, "0")}.mp4`);
     const vf = `scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,fps=30,format=yuv420p`;
+    const n = Math.max(2, Math.round(d * 30));
+    const fade = Math.min(0.35, d / 4);
+    const fades = [f.fadeIn !== false ? `fade=t=in:st=0:d=${fade.toFixed(2)}` : "", f.fadeOut !== false ? `fade=t=out:st=${(d - fade).toFixed(3)}:d=${fade.toFixed(2)}` : ""].filter(Boolean).join(",");
+    // Ken Burns: render at 2x and zoom/pan with zoompan (2x input avoids zoompan's jitter)
+    const zp = {
+      zoom: `zoompan=z='1+0.035*on/${n}':x='iw/2-(iw/zoom/2)':y='ih/2-(ih/zoom/2)':d=${n}:s=${W}x${H}:fps=30`,
+      panDown: `zoompan=z='1.10':x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*on/${n}':d=${n}:s=${W}x${H}:fps=30`,
+      panUp: `zoompan=z='1.10':x='iw/2-(iw/zoom/2)':y='(ih-ih/zoom)*(1-on/${n})':d=${n}:s=${W}x${H}:fps=30`,
+    }[f.motion];
     let args;
     if (f.video) {
-      // speed the real-time recording to fill its slot; overlay a caption bar rendered by Chrome
+      // speed the real-time recording to fill its slot; overlay a caption bar rendered by Chrome (magenta keyed out)
       const factor = d / Math.max(0.5, f.natural);
       const cap = render(`<!doctype html><html><head><meta charset="utf-8"><style>${CSS}html,body{background:#ff00ff;padding:0}</style></head><body><div class="cap"><b>Kane · live</b>${esc(f.label ?? "")}</div></body></html>`);
-      args = ["-f", "concat", "-safe", "0", "-i", f.video, "-i", cap, "-filter_complex", `[0:v]setpts=${factor.toFixed(5)}*PTS,${vf}[v];[1:v]format=rgba,colorkey=0xff00ff:0.25[c];[v][c]overlay=0:0[o]`, "-map", "[o]"];
+      args = ["-f", "concat", "-safe", "0", "-i", f.video, "-i", cap, "-filter_complex", `[0:v]setpts=${factor.toFixed(5)}*PTS,${vf}[v];[1:v]format=rgba,colorkey=0xff00ff:0.25[c];[v][c]overlay=0:0${fades ? "," + fades : ""}[o]`, "-map", "[o]"];
+    } else if (zp) {
+      args = ["-i", f.png, "-vf", `scale=${W * 2}:${H * 2}:force_original_aspect_ratio=decrease,pad=${W * 2}:${H * 2}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,${zp},format=yuv420p${fades ? "," + fades : ""}`];
     } else {
-      args = ["-loop", "1", "-i", f.png, "-vf", vf];
+      args = ["-loop", "1", "-i", f.png, "-vf", `${vf}${fades ? "," + fades : ""}`];
     }
     execFileSync(ffmpeg, ["-y", "-hide_banner", "-loglevel", "error", ...args, "-t", d.toFixed(3), "-an", "-c:v", "libx264", "-preset", "medium", "-crf", "20", "-r", "30", clip], { stdio: "inherit" });
     clips.push(clip);
