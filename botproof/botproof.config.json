@@ -13,9 +13,17 @@
   "headless": false,
   "fix": {
     "maxAttempts": 3,
-    "editable": ["demo-bot/src/**", "demo-bot/api/**", "demo-bot/public/**"],
-    "sources": ["demo-bot/src/bot.ts", "demo-bot/src/menu.ts", "demo-bot/public/checkout.html"],
+    "editable": [
+      "demo-bot/src/**",
+      "demo-bot/api/**",
+      "demo-bot/public/**"
+    ],
+    "sources": [
+      "demo-bot/src/bot.ts",
+      "demo-bot/src/menu.ts",
+      "demo-bot/public/checkout.html"
+    ],
     "agentCommand": "claude -p --permission-mode acceptEdits --allowedTools Read,Edit,Write,Glob,Grep",
-    "botCommand": "npm --prefix demo-bot run dev"
+    "deployCommand": "npx --yes vercel@66.6.0 deploy --prod --yes"
   }
 }
