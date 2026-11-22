@@ -129,7 +129,16 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     const group = args.group ?? (await ask("Test group link:", existing.variables.group_link));
     const channel = args.channel ?? (await ask("Test channel link:", existing.variables.channel_link));
     const discussion = args.discussion ?? (await ask("Discussion group link:", existing.variables.discussion_link));
-    existing.variables = { ...existing.variables, bot_username: bot, group_link: group, channel_link: channel, discussion_link: discussion };
+    const tail = (l: string) => l.replace(/\/+$/, "").split("/").pop() ?? l;
+    existing.variables = {
+      ...existing.variables,
+      bot_username: bot,
+      group_link: group,
+      channel_link: channel,
+      discussion_link: discussion,
+      group_username: tail(group),
+      channel_username: tail(channel),
+    };
 
     // 5. Write files
     saveConfig(existing);

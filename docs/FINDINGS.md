@@ -18,6 +18,21 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Group/channel batch — 22 Nov 2026, 20:05–20:33: 4 flows fail, none sent for a patch
+
+`fix --step group_menu group_privacy channel_special_vote channel_comments`: exit 2, 1311 s, 217.0 credits, log
+`botproof/runs/fix-2026-11-22T19-05-35/LOG.md`. Causes, from the failure that ended each run:
+
+| Flow | Failed at | Cause | Action (22 Nov) |
+|---|---|---|---|
+| `group_menu` | step 3 | `/menu@botproofbot` sent, no reply seen; Kane: config_issue | rerun (the bot answers `/menu` from anyone; Telegram was slow to sync in this batch) |
+| `group_privacy` | step 4 | Kane couldn't open Telegram's Reply control and sent a plain message (agent_misstep) | step reworded: right-click → "Reply", check the "Reply to" bar |
+| `channel_special_vote` | step 3 | Kane stayed on the public `t.me` preview page (state_transition_bug) | open channels/groups via `web.telegram.org/k/#@<username>` like the bot chat (new `group_username`/`channel_username` variables) |
+| `channel_comments` | step 4 | the comment got no bot reply; Telegram still "syncing" after 91 s | **bot bug by code reading**: the comment handler skipped senders marked `is_bot`, and an anonymous admin's comment comes from `@GroupAnonymousBot` (a bot). Fixed by hand (approved; Kane's record showed no bot reply, so the loop rightly did not route it); to be verified by a Kane re-run |
+
+Only the failing flows were edited; the passing group/channel flows keep their wording so their recordings still replay.
+`group_membership` was stopped twice by the developer machine running out of memory (8 GB) — not a Kane or bot failure.
+
 ## Fix loop, fifth attempt — 22 Nov 2026, 19:25–19:39: first full closed loop ✅
 
 `fix --step group_close_admin` → exit 10 (step 3: "the bot replied that only group admins can close the order"; 374 s,

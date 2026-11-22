@@ -15,7 +15,7 @@ Open https://web.telegram.org/k/#@{{bot_username}} and wait until the chat is op
 Type /special and press Enter. Verify the bot replies "Posted today's special".
 
 ## Find the post
-Open {{channel_link}} in Telegram Web. Verify the newest post is "Today's special" in bold with today's drink in italics and two buttons "👍 0" and "👎 0".
+Open https://web.telegram.org/k/#@{{channel_username}} and wait until the channel's posts are shown (not a t.me preview page). Verify the newest post is "Today's special" in bold with today's drink in italics and two buttons "👍 0" and "👎 0".
 
 ## Vote up
 Click "👍 0" under that post. Verify the button changes to "👍 1" on the same post and a notice "You voted 👍" appears.

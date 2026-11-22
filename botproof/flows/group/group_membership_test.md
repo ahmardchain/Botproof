@@ -9,7 +9,7 @@ local_context: botproof/telegram-context.md
 # Bot handles being removed and re-added
 
 ## Open the test group
-Open {{group_link}} in Telegram Web (or https://web.telegram.org/k/ and open the group from the chat list) and wait until the group chat is open with the message input box visible.
+Open https://web.telegram.org/k/#@{{group_username}} and wait until the group chat is open with the message input box visible.
 
 ## Remove the bot
 Open the group info (click the group name at the top), find {{bot_username}} in the members list and remove it from the group. Verify the members list no longer shows the bot.

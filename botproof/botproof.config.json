@@ -8,7 +8,9 @@
     "channel_link": "https://t.me/testingbotproof",
     "discussion_link": "https://t.me/testingbotproofgroup",
     "customer_name": "Ada",
-    "customer_phone": "+2348012345678"
+    "customer_phone": "+2348012345678",
+    "group_username": "testingbotproofgroup",
+    "channel_username": "testingbotproof"
   },
   "headless": false,
   "fix": {

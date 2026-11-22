@@ -1,8 +1,26 @@
 {
-  "bot_username": { "value": "botproofbot" },
-  "group_link": { "value": "https://t.me/botproof_test_group" },
-  "channel_link": { "value": "https://t.me/botproof_specials" },
-  "discussion_link": { "value": "https://t.me/botproof_specials_chat" },
-  "customer_name": { "value": "Ada" },
-  "customer_phone": { "value": "+2348012345678" }
+  "bot_username": {
+    "value": "botproofbot"
+  },
+  "group_link": {
+    "value": "https://t.me/botproof_test_group"
+  },
+  "channel_link": {
+    "value": "https://t.me/botproof_specials"
+  },
+  "discussion_link": {
+    "value": "https://t.me/botproof_specials_chat"
+  },
+  "customer_name": {
+    "value": "Ada"
+  },
+  "customer_phone": {
+    "value": "+2348012345678"
+  },
+  "group_username": {
+    "value": "botproof_test_group"
+  },
+  "channel_username": {
+    "value": "botproof_specials"
+  }
 }

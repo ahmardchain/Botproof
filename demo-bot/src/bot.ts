@@ -349,8 +349,11 @@ export function createBot(token: string, opts: BotOptions): Bot {
   // Discussion-group comments under a channel post (bot must be admin in the discussion group).
   bot.chatType("supergroup").on("message", async (ctx, next) => {
     const parent = ctx.message.reply_to_message;
-    if (parent?.is_automatic_forward && ctx.from && !ctx.from.is_bot) {
-      return ctx.reply(`Thanks for the feedback, ${esc(ctx.from.first_name)}! ☕`, {
+    // A comment from an anonymous admin arrives from @GroupAnonymousBot (is_bot) with sender_chat = this group.
+    const anonymousAdmin = ctx.message.sender_chat?.id === ctx.chat.id;
+    if (parent?.is_automatic_forward && ctx.from && (!ctx.from.is_bot || anonymousAdmin)) {
+      const who = anonymousAdmin ? ctx.chat.title : ctx.from.first_name;
+      return ctx.reply(`Thanks for the feedback, ${esc(who)}! ☕`, {
         ...HTML,
         reply_parameters: { message_id: ctx.message.message_id },
       });
