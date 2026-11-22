@@ -1,0 +1,18 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.vercel/
+
+# Kane CLI: evidence packs and session data are run artifacts and may contain
+# screenshots of the logged-in test account. Never commit them unreviewed.
+.testmuai/evidence/
+.testmuai/sessions/
+# The Chrome profile holding the Telegram Web session. NEVER commit, log or upload it.
+.botproof/
+chrome-profile/
+**/chrome-profiles/
+# BotProof local run logs may include screenshots paths from the test account
+botproof/runs/
+botproof/.local.json
