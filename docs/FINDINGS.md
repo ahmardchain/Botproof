@@ -18,6 +18,26 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Second run — 22 Nov 2026, 14:51: the Telegram login was wiped
+
+| Flow | Result | Time | Credits | Notes |
+|---|---|---|---|---|
+| `private/start_test.md` (2nd run) | FAIL | 311 s | 9.68 | Kane planned a **pure replay** of the 6 recorded actions (hence ~7× cheaper than authoring). The replay could not find the chat; adaptive heal then opened a "fresh browser", which showed Telegram's "Log in by QR Code". Kane: "The replay environment was not signed in to Telegram." |
+
+After the run, the configured profile `C:\Users\<user>\.botproof\chrome-profile` was **completely empty**:
+the folder itself was emptied, not just signed out. Run 1 used the same folder logged in. What emptied it is not
+confirmed (kane-cli's runner is a compressed binary; its launcher code only shows Chrome being started with
+`--user-data-dir` and killed with SIGKILL). The timing points at the heal's "fresh browser". To report to the Kane team
+(Slack / GitHub issue) with the run-2 evidence pack.
+
+**Q1 answer so far: the session is NOT safely kept across runs when Kane owns the profile.**
+
+Mitigation (in `cli/src/profile.ts`, since 22 Nov): the logged-in profile is a **master Kane never sees**. Before every
+flow BotProof copies it (minus caches and lock files) to `<master>-run` and points Kane at the copy with
+`kane-cli config chrome-profile <master>-run` (`testmd run` has no `--chrome-profile` flag; only `kane-cli run` does,
+checked against 0.10.7). If Kane empties the copy, BotProof prints it and records `profileWiped` in the run results;
+the next flow starts from a fresh copy of the master. Verified here: the config is set and the copy is made before Kane starts.
+
 ## Status on 22 Nov 2026 (morning): spike blocked, not failed
 
 The five spike questions need three things this build environment did not have:
@@ -36,11 +56,11 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 
 | # | Question | Result | Evidence |
 |---|---|---|---|
-| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES for one run**; across runs pending | `start_test.md` PASS, 22 Nov 14:35 |
+| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **Run 1 yes; run 2 no: the profile was emptied.** Mitigated with a per-flow copy of a master profile; re-test pending | runs of 22 Nov 14:35 and 14:51 |
 | 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **Chat + /start + reply: YES**; button + edit pending | `start_test.md` PASS; next `menu_pagination_test.md` |
 | 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
 | 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **NOT RUN** | flows ready: `group_order_test.md`, `channel_special_vote_test.md` |
-| 5 | Headless works? Time and credits per flow | **Authoring: 600 s, 66.4 credits** (start flow); replay + headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
+| 5 | Headless works? Time and credits per flow | **Authoring 600 s / 66.4 credits; replay 311 s / 9.68 credits** (start flow, replay incl. a failed heal); headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
 
 How to run it (about 30 minutes, uses a few dozen credits):
 

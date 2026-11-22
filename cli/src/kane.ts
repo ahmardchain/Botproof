@@ -15,6 +15,8 @@ export interface FlowResult {
   steps: { index: number; heading: string; status: string; durationS?: number }[];
   failure?: { stepIndex: number; heading: string; remark: string };
   errorMessage?: string;
+  /** Set when Kane left the run's Chrome profile empty (the Telegram session is gone from that copy). */
+  profileWiped?: boolean;
 }
 
 type Ev = Record<string, any>;

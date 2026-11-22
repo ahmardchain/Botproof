@@ -2,8 +2,9 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { loadConfig, writeVariablesFile, type BotProofConfig } from "./config.js";
 import { discoverFlows, selectFlows, type Flow } from "./flows.js";
-import { kaneAvailable, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
-import { bold, dim, printResult, printSummary, resultsMarkdown } from "./report.js";
+import { kaneAvailable, kaneSync, mergeEvidence, runFlow, type FlowResult } from "./kane.js";
+import { bold, dim, printResult, printSummary, resultsMarkdown, red, yellow } from "./report.js";
+import { isEmptyDir, prepareScratchProfile, profileInUse, scratchPath } from "./profile.js";
 
 export interface RunArgs {
   names: string[];
@@ -31,8 +32,23 @@ export function resolveFlows(cfg: BotProofConfig, names: string[], tags: string[
 export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headless?: boolean; verbose?: boolean } = {}): Promise<FlowResult[]> {
   const variablesFile = writeVariablesFile(cfg);
   const results: FlowResult[] = [];
+  if (profileInUse(cfg.chromeProfile)) {
+    console.log(yellow(`! ${cfg.chromeProfile} looks open in Chrome. Close that Chrome window so its login is fully saved before copying.`));
+  }
+  // `testmd run` has no per-run profile flag (only `kane-cli run` does), so point Kane's stored
+  // config at the scratch copy. Kane never gets the master's path.
+  const cfgSet = kaneSync(["config", "chrome-profile", scratchPath(cfg.chromeProfile)]);
+  if (cfgSet.status !== 0) throw new Error(`kane-cli config chrome-profile failed: ${(cfgSet.stderr || cfgSet.stdout).trim()}`);
   for (const f of flows) {
     console.log(dim(`▶ ${f.path}  [${f.tags.join(", ")}]`));
+    // Fresh copy of the logged-in master profile for every flow; Kane only ever sees the copy.
+    const prof = prepareScratchProfile(cfg.chromeProfile);
+    if (!prof.ok) {
+      const r: FlowResult = { flow: f.path, status: "error", exitCode: 2, steps: [], errorMessage: prof.reason };
+      printResult(r);
+      results.push(r);
+      continue;
+    }
     const r = await runFlow(f.path, {
       headless: opts.headless ?? cfg.headless,
       variablesFile,
@@ -42,6 +58,10 @@ export async function runFlows(cfg: BotProofConfig, flows: Flow[], opts: { headl
         else if (opts.verbose && e.type === undefined && e.remark) console.log(dim(`      ${e.status}: ${e.remark}`));
       },
     });
+    if (isEmptyDir(prof.path)) {
+      r.profileWiped = true;
+      console.log(red(`        Kane left the run's Chrome profile empty (the master login is untouched).`));
+    }
     printResult(r);
     results.push(r);
   }

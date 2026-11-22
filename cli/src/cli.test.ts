@@ -127,3 +127,24 @@ test("extract failure.yaml and screenshot from a pack", () => {
   assert.equal(f.stepDir, "tests/t1/steps/002-b/");
   assert.deepEqual([...f.screenshot!], [0x89, 0x50, 0x4e, 0x47]);
 });
+
+test("scratch profile: copies the login, skips caches and locks, refuses an empty master", async () => {
+  const { prepareScratchProfile, scratchPath } = await import("./profile.js");
+  const { mkdirSync, existsSync, readFileSync } = await import("node:fs");
+  const base = mkdtempSync(join(tmpdir(), "bp-prof-"));
+  const master = join(base, "chrome-profile");
+  mkdirSync(join(master, "Default", "IndexedDB"), { recursive: true });
+  mkdirSync(join(master, "Default", "Cache"), { recursive: true });
+  writeFileSync(join(master, "Default", "IndexedDB", "tg.db"), "session");
+  writeFileSync(join(master, "Default", "Cache", "big"), "x");
+  writeFileSync(join(master, "SingletonLock"), "");
+  const r = prepareScratchProfile(master);
+  assert.ok(r.ok);
+  const s = scratchPath(master);
+  assert.equal(readFileSync(join(s, "Default", "IndexedDB", "tg.db"), "utf8"), "session");
+  assert.ok(!existsSync(join(s, "Default", "Cache")));
+  assert.ok(!existsSync(join(s, "SingletonLock")));
+  const empty = join(base, "empty");
+  mkdirSync(empty);
+  assert.equal(prepareScratchProfile(empty).ok, false);
+});

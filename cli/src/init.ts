@@ -105,7 +105,7 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     existing.chromeProfile = profile;
     if (kane.ok) {
       const r = kaneSync(["config", "chrome-profile", profile]);
-      check(r.status === 0, `kane-cli will reuse this profile for every run`, (r.stderr || r.stdout).trim());
+      check(r.status === 0, `Chrome profile set (BotProof runs Kane on a fresh copy of it per flow)`, (r.stderr || r.stdout).trim());
     }
 
     // 3. Log the test account into Telegram Web inside that profile
