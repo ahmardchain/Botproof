@@ -3,6 +3,7 @@ import { cmdFix } from "./fix.js";
 import { cmdHook } from "./hook.js";
 import { cmdInit } from "./init.js";
 import { cmdRun } from "./run.js";
+import { cmdWhy } from "./why.js";
 import { discoverFlows } from "./flows.js";
 import { loadConfig } from "./config.js";
 
@@ -13,6 +14,7 @@ Usage:
   botproof list                         List flows and their tags
   botproof run [flow...] [--tag <t>]... [--headless] [--merge] [--verbose]
   botproof fix [flow...] [--tag <t>]... [--headless] [--max-attempts <n>] [--step]
+  botproof why <run-dir|pack>...        Show Kane's failure record + screenshot for failed flows
   botproof hook                         Claude Code PreToolUse guard (reads hook JSON on stdin)
 
 Exit codes: 0 pass · 1 flow failed / escalated · 2 setup or Kane error · 10 (fix --step) a patch is needed`;
@@ -63,6 +65,8 @@ async function main(): Promise<number> {
         step: !!flags.step,
         maxAttempts: flags["max-attempts"] ? Number(flags["max-attempts"]) : undefined,
       });
+    case "why":
+      return cmdWhy(pos);
     case "hook":
       return cmdHook();
     case undefined:

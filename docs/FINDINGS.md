@@ -18,6 +18,27 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Runs 9–16 — 22 Nov 2026, 16:33–17:17: groups and channels (2 of 8 pass)
+
+| Flow | Result | Time | Credits | Kane's remark |
+|---|---|---|---|---|
+| `group/group_menu_test.md` | FAIL | 181 s | 44.2 | no bot message "Brew Bot menu — page 1/2" with drink buttons appeared in the group |
+| `group/group_order_test.md` | **PASS** | 273 s | 60.8 | |
+| `group/group_close_admin_test.md` | FAIL | 237 s | 62.3 | order message never became "Group order (closed)"; no "Group order closed by … 1 drink(s)" |
+| `group/group_privacy_test.md` | FAIL | 426 s | 102.8 | "AP determined agent is stuck — no viable actions remain" |
+| `channel/channel_special_vote_test.md` | FAIL | 190 s | 47.0 | newest post was not "Today's special" with "👍 0" / "👎 0" |
+| `channel/channel_edit_delete_test.md` | **PASS** | 595 s | 87.6 | |
+| `channel/channel_comments_test.md` | FAIL | 380 s | 53.7 | bot did not reply "Thanks for the feedback" within 15 s |
+| `group/group_membership_test.md` | FAIL | 329 s | 37.7 | "Telegram Web stayed on settings with an Updating status" — never opened the group |
+
+What is known: the bot's Vercel logs for the whole window show updates arriving and **no errors** (the bot logs every
+unhandled error via `bot.catch`), so none of these is a crash. `group_order` passing proves the bot gets group commands and
+callbacks; `channel_edit_delete` passing proves `/special` posts to the channel. Each failure is therefore either the bot
+replying differently from what the flow expects (a bot bug), or Telegram Web / the agent getting in the way (not a bot bug).
+Not yet classified: the failure screenshots are on the developer machine. `botproof why <run-dir>` (added 22 Nov) extracts
+them with Kane's failure record. Classification, then `botproof fix` for real bot bugs, is the next step. Group/channel
+test chats share one group (`t.me/testingbotproofgroup` is both the test group and the channel's discussion group).
+
 ## Runs 6–8 — 22 Nov 2026, 16:14–16:29: inline keyboards and the main menu
 
 One flow per command (a two-flow run earlier ran the machine out of memory).
