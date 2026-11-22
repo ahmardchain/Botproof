@@ -30,9 +30,9 @@ tips/overlays and wait out "Updating…"; and `botproof fix` now reads Kane's tr
 agent (and without using an attempt) when the triage blames automation or the environment. The anonymous-admin bug is
 still unconfirmed.
 
-**Privacy finding:** that screenshot showed the chat list of a personal Telegram account, not a dedicated test account.
-Evidence packs from these runs must not be published. Nothing personal was committed to git (no share links or packs;
-local Windows paths in run summaries were trimmed to pack file names).
+The account in the screenshots is the dedicated test account (confirmed by the developer); its chat list includes some
+public channels it has joined. Nothing beyond run summaries was committed to git (no share links or packs; local
+Windows paths in run summaries were trimmed to pack file names).
 
 ## Runs 9–16 — 22 Nov 2026, 16:33–17:17: groups and channels (2 of 8 pass)
 
