@@ -13,3 +13,4 @@
 | 2026-11-22 21:33 | botproof/flows/private/menu_pagination_test.md | passed | 365s | 60.5 | `34773f18-adfa-4bd4-8f46-5bf91537fad6.evidence` |  |
 | 2026-11-22 21:42 | botproof/flows/private/item_details_test.md | passed | 402s | 80.0 | `b3d0caf4-d30c-4db1-b3d8-420a93f9305b.evidence` |  |
 | 2026-11-22 21:50 | botproof/flows/group/group_order_test.md | passed | 335s | 80.2 | `91eea916-6c38-4e74-91d0-409daf80b98e.evidence` |  |
+| 2026-11-22 22:08 | botproof/flows/group/group_close_admin_test.md | passed | 374s | 51.0 | `55946049-5b1d-4529-8145-8108d23d49f6.evidence` |  |
