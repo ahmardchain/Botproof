@@ -131,7 +131,7 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 | 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES, when BotProof owns Chrome** (master profile copy + `--cdp-endpoint`): 2 consecutive passes. When Kane launched Chrome itself it used a blank temp profile or emptied the given one | runs of 22 Nov 15:22 and 15:32 |
 | 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **YES** | `start`, `menu_pagination`, `item_details`, `main_menu` PASS (22 Nov) |
 | 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
-| 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **NOT RUN** | flows ready: `group_order_test.md`, `channel_special_vote_test.md` |
+| 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **Group: YES** (`group_order` PASS: tapped a button on the bot's group message, saw the edit). **Channel: posting yes** (`channel_edit_delete` PASS); tapping a vote on a post not yet passed | runs of 22 Nov 16:33–17:17 |
 | 5 | Headless works? Time and credits per flow | Authoring 230–600 s / 56–124 credits per flow; a full cached replay 63 s / 0 credits; headless pending | `botproof run` prints both per flow (`test_md_done.duration_s`, summed `run_end.credits`) |
 
 How to run it (about 30 minutes, uses a few dozen credits):
