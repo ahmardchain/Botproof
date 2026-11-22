@@ -35,7 +35,45 @@ function freePort(): Promise<number> {
   });
 }
 
+/**
+ * Stop a Chrome left running on this profile by an earlier BotProof run that was killed
+ * (e.g. the agent's shell stopped it). Matches only processes whose command line carries this
+ * exact --user-data-dir, so the user's own Chrome is never touched.
+ */
+export function killChromeOnProfile(userDataDir: string): void {
+  if (process.platform === "win32") {
+    const dir = userDataDir.replace(/'/g, "''");
+    const ps = `Get-CimInstance Win32_Process -Filter "Name='chrome.exe'" | Where-Object { $_.CommandLine -like '*--user-data-dir=${dir}*' } | ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }`;
+    spawnSync("powershell", ["-NoProfile", "-NonInteractive", "-Command", ps], { stdio: "ignore" });
+  } else {
+    spawnSync("pkill", ["-f", "--", `--user-data-dir=${userDataDir}`], { stdio: "ignore" });
+  }
+}
+
+/** Chromes started by this process, stopped on Ctrl-C / kill / exit. */
+const live = new Set<ChromeSession>();
+let hooked = false;
+function hookExit() {
+  if (hooked) return;
+  hooked = true;
+  const killAll = () => {
+    for (const s of live) s.killNow();
+  };
+  process.on("exit", killAll);
+  for (const sig of ["SIGINT", "SIGTERM", "SIGHUP", "SIGBREAK"] as const) {
+    try {
+      process.on(sig, () => {
+        killAll();
+        process.exit(130);
+      });
+    } catch {
+      /* signal not supported on this platform */
+    }
+  }
+}
+
 export interface ChromeSession {
+  killNow: () => void;
   endpoint: string;
   stop: () => Promise<void>;
 }
@@ -77,13 +115,26 @@ export async function launchChrome(opts: { userDataDir: string; headless?: boole
     await new Promise((r) => setTimeout(r, 300));
   }
 
-  const stop = async () => {
+  const killNow = () => {
     if (exited) return;
     if (process.platform === "win32" && child.pid) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
-    else child.kill("SIGTERM");
-    const until = Date.now() + 10_000;
-    while (!exited && Date.now() < until) await new Promise((r) => setTimeout(r, 200));
-    if (!exited) child.kill("SIGKILL");
+    else child.kill("SIGKILL");
   };
-  return { endpoint, stop };
+  const session: ChromeSession = {
+    endpoint,
+    killNow,
+    stop: async () => {
+      live.delete(session);
+      if (exited) return;
+      if (process.platform === "win32" && child.pid) spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+      else child.kill("SIGTERM");
+      const until = Date.now() + 10_000;
+      while (!exited && Date.now() < until) await new Promise((r) => setTimeout(r, 200));
+      if (!exited) child.kill("SIGKILL");
+      killChromeOnProfile(opts.userDataDir); // renderer/GPU children that outlived the browser
+    },
+  };
+  live.add(session);
+  hookExit();
+  return session;
 }

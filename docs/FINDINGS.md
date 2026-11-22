@@ -18,6 +18,23 @@ What this answers:
 - **Q5 (partly):** an authoring run of a 4-step flow took **10 minutes and 66 credits**. Replays of an unchanged flow should come from Kane's cache with no LLM cost (per the testmd docs) — to measure with the second run. Budget at authoring cost: 21 flows ≈ 1,400–2,000 credits of the 10,000.
 - `init` prompts are skipped when stdin is not a terminal (e.g. run from an agent's shell); pass `--bot/--group/--channel/--discussion` instead.
 
+## Runs 4–5 — 22 Nov 2026, 15:22–15:41: CDP fix works, twice in a row
+
+| Flow | Result | Time | Credits | New `kane-clean-*` temp profile? |
+|---|---|---|---|---|
+| `private/start_test.md` | **PASS** (4/4 steps) | 441 s | 56.2 | No |
+| `private/start_test.md` (again) | **PASS** | 423 s | 27.4 | No |
+
+Logs: `botproof/runs/run-2026-11-22T14-22-58/`, `botproof/runs/run-2026-11-22T14-32-28/`. The master profile was
+untouched (43 entries) after both runs. **Q1 answered: yes**, with BotProof owning Chrome (copy of the master profile +
+`--cdp-endpoint`). Run 2 cost about half of run 1; whether it replayed part of the flow is not checked yet.
+
+Then `run menu_pagination item_details` was stopped part-way by the developer machine running out of memory (no result,
+no summary). It left BotProof's Chrome running, because nothing stopped it when the run was killed. Fixed: BotProof now
+stops its Chrome on exit and on SIGINT/SIGTERM, and before each flow it kills any Chrome still running on the scratch
+profile (matched by its exact `--user-data-dir`, so the user's own Chrome is never touched). Verified on Linux: 8 orphaned
+processes after a hard kill → 0 after the next flow's setup; 0 after SIGTERM.
+
 ## Third run — 22 Nov 2026, 15:12: Kane ignored the configured profile
 
 | Flow | Result | Time | Credits | Notes |
@@ -76,7 +93,7 @@ So the spike has to run on a machine with Chrome and normal internet access: the
 
 | # | Question | Result | Evidence |
 |---|---|---|---|
-| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **Run 1 yes; run 2 no: the profile was emptied.** Mitigated with a per-flow copy of a master profile; re-test pending | runs of 22 Nov 14:35 and 14:51 |
+| 1 | Kane opens Telegram Web with a saved, logged-in Chrome profile and stays logged in across runs | **YES, when BotProof owns Chrome** (master profile copy + `--cdp-endpoint`): 2 consecutive passes. When Kane launched Chrome itself it used a blank temp profile or emptied the given one | runs of 22 Nov 15:22 and 15:32 |
 | 2 | Open a bot chat, send /start, read the reply, tap an inline button, see the message edit | **Chat + /start + reply: YES**; button + edit pending | `start_test.md` PASS; next `menu_pagination_test.md` |
 | 3 | Interact with a Mini App in Telegram Web's iframe | **NOT RUN** | flow ready: `miniapp_checkout_test.md` |
 | 4 | Open a group and a channel, find the bot's message, tap a button on a channel post | **NOT RUN** | flows ready: `group_order_test.md`, `channel_special_vote_test.md` |

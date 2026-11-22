@@ -36,7 +36,10 @@ export function printSummary(results: FlowResult[]) {
 export function resultsMarkdown(results: FlowResult[]): string {
   const rows = results.map((r) => {
     const why = r.failure ? `step ${r.failure.stepIndex} "${r.failure.heading}": ${r.failure.remark}` : r.errorMessage ?? "";
-    return `| ${r.flow} | ${r.status} | ${r.durationS != null ? Math.round(r.durationS) + "s" : "–"} | ${r.credits ?? "–"} | ${r.evidencePath ? "`" + r.evidencePath + "`" : "–"} | ${why.replace(/\|/g, "\\|").replace(/\n/g, " ")} |`;
+    // Only the pack's file name: the full path would publish the local user name.
+    const pack = r.evidencePath ? r.evidencePath.split(/[\\/]/).pop() : undefined;
+    const flow = r.flow.split("\\").join("/");
+    return `| ${flow} | ${r.status} | ${r.durationS != null ? Math.round(r.durationS) + "s" : "–"} | ${r.credits != null ? r.credits.toFixed(1) : "–"} | ${pack ? "`" + pack + "`" : "–"} | ${why.replace(/\|/g, "\\|").replace(/\n/g, " ")} |`;
   });
   return ["| Flow | Result | Time | Credits | Evidence pack | Failure |", "|---|---|---|---|---|---|", ...rows].join("\n");
 }

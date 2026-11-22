@@ -7,6 +7,7 @@
 // copy means a wiped profile costs one flow, not the login, and every flow starts from the same state.
 import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { basename, join } from "node:path";
+import { killChromeOnProfile } from "./chrome.js";
 
 /** Large, regenerable caches; skipping them keeps the copy to a few seconds. */
 const SKIP = new Set(["Cache", "Code Cache", "GPUCache", "ShaderCache", "GrShaderCache", "GraphiteDawnCache", "DawnCache", "Crashpad", "component_crx_cache", "optimization_guide_model_store"]);
@@ -29,6 +30,7 @@ export function prepareScratchProfile(master: string): { ok: true; path: string 
     return { ok: false, reason: `the Telegram login profile ${master} is empty. Log the TEST account in again (botproof init prints the command).` };
   }
   const scratch = scratchPath(master);
+  killChromeOnProfile(scratch); // a Chrome left by a killed run would lock the copy on Windows
   rmSync(scratch, { recursive: true, force: true });
   mkdirSync(scratch, { recursive: true });
   cpSync(master, scratch, {
