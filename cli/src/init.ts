@@ -148,6 +148,14 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     const hasFlows = discoverFlows(existing.flowsDir).length > 0;
     if (!hasFlows) writeFileSync(join(existing.flowsDir, "start_test.md"), SAMPLE_FLOW);
     if (!existsSync(CONTEXT_PATH)) writeFileSync(CONTEXT_PATH, TELEGRAM_CONTEXT);
+    // Claude Code edit guard: blocks agent edits outside fix.editable. Only written when the project has no settings yet.
+    const settings = join(".claude", "settings.json");
+    const hookAdded = !existsSync(settings);
+    if (hookAdded) {
+      mkdirSync(".claude", { recursive: true });
+      const command = existsSync(join("cli", "dist", "index.js")) ? 'node "$CLAUDE_PROJECT_DIR/cli/dist/index.js" hook' : "npx --yes botproof hook";
+      writeFileSync(settings, JSON.stringify({ hooks: { PreToolUse: [{ matcher: "Edit|Write|MultiEdit|NotebookEdit", hooks: [{ type: "command", command }] }] } }, null, 2) + "\n");
+    }
     const gi = existsSync(".gitignore") ? readFileSync(".gitignore", "utf8") : "";
     const ignores = [".testmuai/evidence/", "botproof/.fix-*", "botproof/runs/**/*.png"].filter((l) => !gi.includes(l));
     if (ignores.length) appendFileSync(".gitignore", `\n# BotProof\n${ignores.join("\n")}\n`);
@@ -155,6 +163,7 @@ export async function cmdInit(args: InitArgs): Promise<number> {
     console.log(bold(green("\nReady.")));
     console.log(`  config:  ${CONFIG_PATH}`);
     console.log(`  flows:   ${existing.flowsDir}/${hasFlows ? "" : " (sample: start_test.md)"}`);
+    if (hookAdded) console.log(`  guard:   .claude/settings.json (Claude Code may only edit fix.editable)`);
     console.log(`  next:    botproof run start`);
     return 0;
   } finally {

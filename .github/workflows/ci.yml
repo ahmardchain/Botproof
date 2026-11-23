@@ -1,0 +1,45 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  cli:
+    name: CLI build, tests, package
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - name: Install the packed CLI into an empty project and run init
+        run: |
+          npm pack --pack-destination "$RUNNER_TEMP"
+          mkdir "$RUNNER_TEMP/proj" && cd "$RUNNER_TEMP/proj" && git init -q && npm init -y >/dev/null
+          npm install "$RUNNER_TEMP"/botproof-*.tgz
+          npx botproof --help
+          npx botproof init --yes --skip-login --bot example_bot --group https://t.me/example_group --channel https://t.me/example_channel --discussion https://t.me/example_group
+          npx botproof list
+          test -f botproof/flows/start_test.md && test -f .claude/settings.json
+
+  demo-bot:
+    name: Demo bot typecheck + unit tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo-bot
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test

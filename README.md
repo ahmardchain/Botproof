@@ -1,5 +1,7 @@
 # BotProof
 
+[![CI](https://github.com/ahmardchain/Botproof/actions/workflows/ci.yml/badge.svg)](https://github.com/ahmardchain/Botproof/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/botproof)](https://www.npmjs.com/package/botproof)
+
 **Your bot works on your laptop. BotProof proves it works in Telegram.**
 
 End-to-end tests for Telegram bots: plain-English flows, run by [Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli) by TestMu AI in real Telegram Web, fixed by your coding agent until they pass.
@@ -194,20 +196,31 @@ Needs Node 20+, Google Chrome, a TestMu AI account, and a **dedicated test Teleg
 npm install -g @testmuai/kane-cli && kane-cli login
 ```
 ```bash
+npx botproof init      # in your bot's repo: checks Chrome + Kane, logs the test account into Telegram Web, writes config, a sample flow and the Claude Code edit guard
+```
+```bash
+npx botproof run start
+```
+```bash
+npx botproof fix start   # fail → Claude Code patches the bot → Kane re-runs, max 3 attempts
+```
+
+Then write your own flows in `botproof/flows/` and set `fix.editable` in `botproof/botproof.config.json` to your bot's
+source folders. `npx botproof --help` lists every command.
+
+To run the demo bot's 22 flows instead, clone this repo:
+
+```bash
 git clone https://github.com/ahmardchain/Botproof && cd Botproof && npm install
 ```
 ```bash
-node cli/dist/index.js init        # checks Chrome + Kane, logs the test account into Telegram Web, asks for bot/group/channel
-```
-```bash
-node cli/dist/index.js run start menu_pagination item_details group_order   # flows that pass live
-```
-```bash
-node cli/dist/index.js fix group_close_admin   # fail → agent patch → re-run, max 3 attempts
+npx botproof run start menu_pagination item_details group_order   # flows that pass live
 ```
 
-To test your own bot instead of Brew Bot: point `bot_username` at it in `botproof/botproof.config.json`, write flows in
-`botproof/flows/`, and set `fix.editable` to your bot's source folders.
+**CI** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs on every push: the CLI's unit tests on Node 20 and 22,
+installs the packed CLI into an empty project and runs `botproof init` there, and type-checks and tests the demo bot.
+Live Kane runs are not in CI: they need a logged-in Telegram test account, which a hosted runner doesn't have.
+Tagging `v*` publishes the CLI to npm ([`publish.yml`](.github/workflows/publish.yml)).
 
 ## Roadmap
 
@@ -218,7 +231,7 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
   `channel_special_vote`, `channel_comments`, `group_privacy`, `group_membership`, `inline_mode` (written, not yet passing live).
 - **Second test account** for multi-user group tests (new-member welcome, non-admins refused, only A can tap A's buttons).
 - **Parallel runs:** one Chrome profile per worker, so a suite doesn't run one flow at a time.
-- **CI:** a GitHub Action that runs the passing flows headless on every push to the bot.
+- **Live runs in CI:** a self-hosted runner with the test account's Chrome profile, so Kane runs the passing flows on every push.
 
 ## Kane limits we hit, and how we worked around them
 
