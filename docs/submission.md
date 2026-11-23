@@ -30,4 +30,4 @@ handed it to Claude Code, which patched one condition; BotProof redeployed and K
 botproof/runs/fix-2026-11-22T18-25-38/LOG.md). 11 of 22 flows pass live, across commands, inline keyboards, the
 conversation's cancel path, message formatting, the Mini App checkout, groups and channels.
 
-**Links:** repo https://github.com/ahmardchain/Botproof · video https://youtu.be/mY_bRyfb-SE · demo bot https://t.me/botproofbot · posts <X link>, <LinkedIn link>
+**Links:** repo https://github.com/ahmardchain/Botproof · video https://youtu.be/mY_bRyfb-SE · demo bot https://t.me/botproofbot · posts https://x.com/Ahmardchain/status/2124870833818533942 , https://lnkd.in/p/eMh29N6y
