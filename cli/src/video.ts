@@ -72,10 +72,16 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
     : [];
   const natural = readFileSync(join(dir, "frames.txt"), "utf8").split("\n").filter((l) => l.startsWith("duration ")).reduce((a, l) => a + Number(l.slice(9)), 0);
   if (natural < 1) throw new Error(`${dir}: recording too short`);
-  const speed = opts.speed ?? Math.max(1, Math.ceil(natural / 60)); // aim for ≤ 60 s of footage
   const work = join(dir, "video-build");
   rmSync(work, { recursive: true, force: true });
   mkdirSync(work, { recursive: true });
+  // Real-speed footage: keep every moment the screen changes at 1×, cut each still stretch (Kane thinking) to ≤ 0.8 s.
+  // Falls back to a uniform speed-up for recordings made before frame timestamps were logged.
+  const compact = times.length >= 2 ? compactTimeline(dir, times, work, opts.ffmpeg) : undefined;
+  const footageLen = compact ? compact.total : natural;
+  const warp = (relT: number) => (compact ? compact.warp(relT) : relT);
+  const speed = opts.speed ?? (compact ? Math.max(1, footageLen / 90) : Math.max(1, Math.ceil(natural / 60)));
+  const speedLabel = compact && speed <= 1.01 ? "real speed, pauses cut" : `${speed.toFixed(1)}×${compact ? ", pauses cut" : ""}`;
   const ff = (args: string[]) => execFileSync(opts.ffmpeg, ["-y", "-hide_banner", "-loglevel", "error", ...args], { stdio: "inherit" });
   const enc = ["-c:v", "libx264", "-preset", "medium", "-crf", "20", "-pix_fmt", "yuv420p", "-r", "30", "-an"];
 
@@ -86,12 +92,12 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
 
   // 2. live footage with per-step captions (timeline in recording time, then sped up)
   const t0 = times[0] ?? meta.steps[0]?.t ?? 0;
-  const steps = meta.steps.map((s, i) => ({ ...s, a: Math.max(0, s.t - t0), b: i + 1 < meta.steps.length ? Math.max(0, meta.steps[i + 1].t - t0) : natural + 5 }));
-  const inputs = ["-f", "concat", "-safe", "0", "-i", join(dir, "frames.txt")];
+  const steps = meta.steps.map((s, i) => ({ ...s, a: warp(Math.max(0, s.t - t0)), b: i + 1 < meta.steps.length ? warp(Math.max(0, meta.steps[i + 1].t - t0)) : footageLen + 5 }));
+  const inputs = ["-f", "concat", "-safe", "0", "-i", compact ? compact.list : join(dir, "frames.txt")];
   let graph = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,setsar=1,fps=30[v0]`; // constant frame rate so captions/cursor animate between page changes
   steps.forEach((s, i) => {
     const png = join(work, `cap-${i}.png`);
-    renderPng(`<div class="cap"><b>Step ${i + 1}/${steps.length}</b>${esc(s.heading)}<span>Kane · live · ${speed}× · cursor = Kane's real clicks</span></div>`, png, opts.chrome, true);
+    renderPng(`<div class="cap"><b>Step ${i + 1}/${steps.length}</b>${esc(s.heading)}<span>Kane · live · ${speedLabel} · cursor = Kane's real clicks</span></div>`, png, opts.chrome, true);
     inputs.push("-i", png);
     graph += `;[${i + 1}:v]colorkey=0xff00ff:0.25[c${i}];[v${i}][c${i}]overlay=0:0:enable='between(t,${s.a.toFixed(2)},${s.b.toFixed(2)})'[v${i + 1}]`;
   });
@@ -103,7 +109,7 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
   if (clicks.length && vp && frame) {
     const s = Math.min(W / frame.w, H / frame.h);
     const padX = (W - frame.w * s) / 2, padY = (H - frame.h * s) / 2;
-    const pts = clicks.map((c) => ({ t: c.t, x: padX + c.x * (frame.w / vp.w) * s, y: padY + c.y * (frame.h / vp.h) * s }));
+    const pts = clicks.map((c) => ({ t: warp(c.t), x: padX + c.x * (frame.w / vp.w) * s, y: padY + c.y * (frame.h / vp.h) * s }));
     const cur = join(work, "cursor.png"), rip = join(work, "ripple.png");
     renderPng(`<svg width="64" height="64" viewBox="0 0 64 64" style="position:absolute;left:0;top:0"><path d="M6 4 L6 50 L18 39 L27 59 L35 55 L26 36 L42 36 Z" fill="#ffffff" stroke="#111" stroke-width="3" stroke-linejoin="round"/></svg>`, cur, opts.chrome, true);
     renderPng(`<div style="position:absolute;left:0;top:0;width:96px;height:96px;border-radius:50%;border:6px solid #2aabee;background:rgba(42,171,238,.35)"></div>`, rip, opts.chrome, true);
@@ -132,6 +138,38 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
   return out;
 }
 
+
+/**
+ * Find the frames where the screen visibly changes (ffmpeg mpdecimate on a blurred, downscaled copy, so a blinking
+ * caret doesn't count) and build a timeline that plays those at real speed while capping every still stretch.
+ */
+function compactTimeline(dir: string, times: number[], work: string, ffmpeg: string, hold = 0.8) {
+  const rel = times.map((t) => t - times[0]);
+  const r = spawnSync(ffmpeg, ["-hide_banner", "-f", "concat", "-safe", "0", "-i", join(dir, "frames.txt"), "-vf", "scale=480:-2,boxblur=2:1,mpdecimate=hi=64*20:lo=64*6:frac=0.2,showinfo", "-f", "null", "-"], { encoding: "utf8", maxBuffer: 256 * 1024 * 1024 });
+  const keptT = [...r.stderr.matchAll(/pts_time:([\d.]+)/g)].map((m) => Number(m[1]));
+  const nearest = (t: number) => {
+    let lo = 0, hi = rel.length - 1;
+    while (lo < hi) { const mid = (lo + hi) >> 1; if (rel[mid] < t - 1e-3) lo = mid + 1; else hi = mid; }
+    return lo;
+  };
+  const idx = [...new Set([0, ...keptT.map(nearest), rel.length - 1])].sort((a, b) => a - b);
+  const files = readFileSync(join(dir, "times.txt"), "utf8").trim().split("\n").map((l) => l.split(" ")[0]);
+  const start: number[] = [], dur: number[] = [];
+  let acc = 0;
+  idx.forEach((i, j) => {
+    const gap = j + 1 < idx.length ? rel[idx[j + 1]] - rel[i] : 1;
+    const d = Math.min(Math.max(gap, 1 / 30), hold);
+    start.push(acc); dur.push(d); acc += d;
+  });
+  const list = join(work, "frames-compact.txt");
+  writeFileSync(list, idx.map((i, j) => `file '${resolve(dir, files[i]).replace(/'/g, "'\\''")}'\nduration ${dur[j].toFixed(3)}`).join("\n") + `\nfile '${resolve(dir, files[idx[idx.length - 1]]).replace(/'/g, "'\\''")}'\n`);
+  const warp = (t: number) => {
+    let j = 0;
+    while (j + 1 < idx.length && rel[idx[j + 1]] <= t) j++;
+    return start[j] + Math.min(Math.max(0, t - rel[idx[j]]), dur[j]);
+  };
+  return { list, total: acc, warp, kept: idx.length, of: rel.length };
+}
 
 /** Clicks logged during --record, in recording time (seconds since the first frame). */
 function readClicks(dir: string, t0: number, natural: number): { t: number; x: number; y: number }[] {

@@ -131,7 +131,8 @@ node cli/dist/index.js run menu_pagination --record   # films the Telegram Web p
 node cli/dist/index.js video                          # → botproof/recordings/<time>-<flow>/video.mp4
 ```
 
-Each video is a title card, Kane's live footage of real Telegram Web (sped up to about a minute), a caption naming the
+Each video is a title card, Kane's live footage of real Telegram Web (every moment the screen changes plays at real speed; the long pauses while
+Kane thinks are cut to under a second), a caption naming the
 step Kane is on, a cursor that glides to every spot Kane really clicked (Kane drives Chrome with input events and never
 shows a cursor, so BotProof logs each click during `--record` and draws it), and a PASS/FAIL card with Kane's remark: something to attach to a pull request or show a client.
 It uses Chrome's own screencast (CDP `Page.startScreencast`) and ffmpeg (`ffmpeg-static` is an optional dependency).
