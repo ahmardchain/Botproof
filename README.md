@@ -5,7 +5,7 @@
 BotProof runs plain-English test flows against your Telegram bot in the real Telegram Web client, driven by
 [Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli), and hands every failure to your coding agent to fix until the flow passes.
 
-[Demo video](https://youtu.be/mY_bRyfb-SE) · [Demo bot](#demo-bot) · [Evidence packs](#evidence-packs) · [Install](#install-and-run)
+[Demo video](https://youtu.be/mY_bRyfb-SE) · [Demo bot](#demo-bot) · [Evidence packs](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs) · [Install](#install-and-run)
 
 > **Status (23 Nov 2026):** 11 of 22 flows pass live in real Telegram Web (✅ below), Kane caught 1 real bug in the
 > demo bot, and the fix loop fixed it end to end (Kane fail → Claude Code patch → redeploy → Kane pass). Run logs for
@@ -35,11 +35,11 @@ render, a keyboard that never goes away, a Mini App that opens blank.
 ## For judges: start here
 
 Telegram is a third-party login we can't hand over, so every passing flow ships with a **recorded run** instead:
-its run log, Kane's screenshots and the demo video (no login needed).
+its Kane evidence pack ([release](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs)), its run log and the demo video (no login needed).
 
 | Do this | You'll see |
 |---|---|
-| 1. **No login needed:** watch the [demo video](https://youtu.be/mY_bRyfb-SE) and look at [What Kane saw](#what-kane-saw-real-screenshots) | Kane in real Telegram Web: the bug, the fix, menus, the group order, the channel post |
+| 1. **No login needed:** download a pack from the [evidence-packs release](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs), then `npx @testmuai/kane-cli evidence serve <pack>.evidence` | Kane's run step by step: screenshots of Telegram Web, what it tapped, what it checked |
 | 2. Read one flow, e.g. [`menu_pagination_test.md`](botproof/flows/private/menu_pagination_test.md) | The whole test is plain English |
 | 3. Read [a real fix-loop log](#the-closed-loop) | Kane fails a flow → Claude patches the bot → Kane re-runs → pass |
 | 4. Open the demo bot in Telegram and send `/start`, then `/menu` | The bot under test, live |
@@ -153,10 +153,14 @@ Bot: [@botproofbot](https://t.me/botproofbot) (shown as "Brew Bot"). Test group:
 
 ## Evidence packs
 
-Every Kane run writes a sealed evidence pack (step screenshots, what Kane tapped and checked); the execution IDs are in
-each run's `SUMMARY.md` / `LOG.md` under [`botproof/runs/`](botproof/runs/). The packs themselves are not published
-yet (see [Roadmap](#roadmap)): before publishing, each must be checked for session data. They contain screenshots of the
-test account's Telegram Web, never of a personal account. Replay one locally with `kane-cli evidence serve <pack>`.
+**[Download them from the `evidence-packs` release](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs).** 17 passing runs, plus `42fbcfdb`, the failing run where
+Kane caught the anonymous-admin `/close` bug (the passing re-run after the fix is `28a588a6`). Replay one with
+`kane-cli evidence serve <file>.evidence`; the execution IDs match the run logs in [`botproof/runs/`](botproof/runs/).
+
+Cleaned before upload, and each still passes `kane-cli evidence validate`: screenshots are cropped to the chat pane (the
+test account's chat list is left out), log lines quoting that chat list are redacted, one long-expired login QR code is
+blurred, and every pack was checked for cookies, localStorage, auth keys, tokens, Chrome profile files and the bot token.
+Because of the cropping they are not byte-identical to the packs Kane wrote.
 
 ## Install and run
 
@@ -191,7 +195,6 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 - **Second test account** for multi-user group tests (new-member welcome, non-admins refused, only A can tap A's buttons).
 - **Parallel runs:** one Chrome profile per worker, so a suite doesn't run one flow at a time.
 - **CI:** a GitHub Action that runs the smoke flows headless on every push to the bot.
-- **Evidence packs published** for every passing flow, so judges and users can replay runs without logging in.
 
 ## Limits
 
