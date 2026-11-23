@@ -3,13 +3,13 @@
     "value": "botproofbot"
   },
   "group_link": {
-    "value": "https://t.me/botproof_test_group"
+    "value": "https://t.me/testingbotproofgroup"
   },
   "channel_link": {
-    "value": "https://t.me/botproof_specials"
+    "value": "https://t.me/testingbotproof"
   },
   "discussion_link": {
-    "value": "https://t.me/botproof_specials_chat"
+    "value": "https://t.me/testingbotproofgroup"
   },
   "customer_name": {
     "value": "Ada"
@@ -18,9 +18,9 @@
     "value": "+2348012345678"
   },
   "group_username": {
-    "value": "botproof_test_group"
+    "value": "testingbotproofgroup"
   },
   "channel_username": {
-    "value": "botproof_specials"
+    "value": "testingbotproof"
   }
 }

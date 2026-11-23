@@ -4,7 +4,7 @@ Numbers below are from the real runs (11 of 22 flows passing live, 1 real bug ca
 
 ## X / Twitter
 
-> I built BotProof for #KaneCLIHack: @TestMuAI's Kane CLI tests a Telegram bot in real Telegram Web, and Claude Code fixes what fails.
+> I built BotProof for #KaneCLIHackDay: @testmuai's Kane CLI tests a Telegram bot in real Telegram Web, and Claude Code fixes what fails.
 >
 > 11 flows green. It caught a real bug the unit tests never would.
 >

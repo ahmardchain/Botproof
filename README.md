@@ -2,7 +2,7 @@
 
 **Your bot works on your laptop. BotProof proves it works in Telegram.**
 
-End-to-end tests for Telegram bots: plain-English flows, run by [Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli) in real Telegram Web, fixed by your coding agent until they pass.
+End-to-end tests for Telegram bots: plain-English flows, run by [Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli) by TestMu AI in real Telegram Web, fixed by your coding agent until they pass.
 
 | Kane run | Result |
 |---|---|
@@ -25,7 +25,7 @@ Replay both runs, no Telegram login: [evidence packs](https://github.com/ahmardc
 
 Taken by Kane in Telegram Web during the runs on 22 Nov (cropped to the chat pane; the test account's chat list is left out).
 
-| The bug: the anonymous owner's `/close` is refused | After Claude's fix: the order closes |
+| The bug: the anonymous owner's `/close` is refused | After the fix, Kane confirms the order closes |
 |---|---|
 | <img src="docs/screenshots/1-bug-close-refused.png" width="380"> | <img src="docs/screenshots/2-fix-close-works.png" width="380"> |
 
@@ -50,7 +50,7 @@ its Kane evidence pack ([release](https://github.com/ahmardchain/Botproof/releas
 | 2. Read one flow, e.g. [`menu_pagination_test.md`](botproof/flows/private/menu_pagination_test.md) | The whole test is plain English |
 | 3. Read [a real fix-loop log](#the-closed-loop) | Kane fails a flow → Claude patches the bot → Kane re-runs → pass |
 | 4. Open the demo bot in Telegram and send `/start`, then `/menu` | The bot under test, live |
-| 5. Run it yourself with your own **test** Telegram account: [Install and run](#install-and-run) | `botproof run --tag smoke` prints PASS/FAIL per flow with an evidence link |
+| 5. Run it yourself with your own **test** Telegram account: [Install and run](#install-and-run) | `botproof run start menu_pagination group_order` prints PASS/FAIL per flow with an evidence link |
 
 ## What BotProof tests
 
@@ -61,14 +61,16 @@ Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. �
 | Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) ✅ · [main_menu](botproof/flows/private/main_menu_test.md) ✅ · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) |
 | Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) ✅ · [item_details](botproof/flows/private/item_details_test.md) ✅ |
 | Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) |
-| Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) ✅ |
+| Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) ✅† |
 | Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) ✅ |
 | Media | order photo arrives with the right caption and order number | [conversation](botproof/flows/private/conversation_test.md) |
 | Mini App | opens inside Telegram, form + Telegram main button work, data reaches the bot | [miniapp_checkout](botproof/flows/private/miniapp_checkout_test.md) ✅ |
 | Menu button | opens the Mini App; paying from it reaches the bot | [menu_button](botproof/flows/private/menu_button_test.md) |
-| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) ✅ · [group_order](botproof/flows/group/group_order_test.md) ✅ · [group_close_admin](botproof/flows/group/group_close_admin_test.md) ✅ · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) |
+| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) ✅† · [group_order](botproof/flows/group/group_order_test.md) ✅ · [group_close_admin](botproof/flows/group/group_close_admin_test.md) ✅ · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) |
 | Channels | posts "today's special"; 👍/👎 votes edit the post; bot edits and deletes its post; comments in the discussion group reach the bot | [channel_special_vote](botproof/flows/channel/channel_special_vote_test.md) · [channel_edit_delete](botproof/flows/channel/channel_edit_delete_test.md) ✅ · [channel_comments](botproof/flows/channel/channel_comments_test.md) |
 | Stretch | inline mode; stale buttons after cancel | [inline_mode](botproof/flows/stretch/inline_mode_test.md) · [stale_button](botproof/flows/stretch/stale_button_test.md) |
+
+† Passed live on 22 Nov ([FINDINGS](docs/FINDINGS.md)), but the batch was killed for memory before it wrote a run log, so there is no published pack yet; re-run pending.
 
 Not built: tests that need a second Telegram account (new-member welcome, non-admin `/close` refusal, "only A can tap A's
 buttons"). They are possible with a second Chrome profile but were left out to keep the single-account flows reliable.
@@ -183,10 +185,10 @@ git clone https://github.com/ahmardchain/Botproof && cd Botproof && npm install
 node cli/dist/index.js init        # checks Chrome + Kane, logs the test account into Telegram Web, asks for bot/group/channel
 ```
 ```bash
-node cli/dist/index.js run --tag smoke
+node cli/dist/index.js run start menu_pagination item_details group_order   # flows that pass live
 ```
 ```bash
-node cli/dist/index.js fix --tag smoke
+node cli/dist/index.js fix group_close_admin   # fail → agent patch → re-run, max 3 attempts
 ```
 
 To test your own bot instead of Brew Bot: point `bot_username` at it in `botproof/botproof.config.json`, write flows in
@@ -201,7 +203,7 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
   `channel_special_vote`, `channel_comments`, `group_privacy`, `group_membership`, `inline_mode` (written, not yet passing live).
 - **Second test account** for multi-user group tests (new-member welcome, non-admins refused, only A can tap A's buttons).
 - **Parallel runs:** one Chrome profile per worker, so a suite doesn't run one flow at a time.
-- **CI:** a GitHub Action that runs the smoke flows headless on every push to the bot.
+- **CI:** a GitHub Action that runs the passing flows headless on every push to the bot.
 
 ## Limits
 
