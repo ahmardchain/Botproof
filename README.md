@@ -248,11 +248,11 @@ Tagging `v*` publishes the CLI to npm ([`publish.yml`](.github/workflows/publish
 | Kane's triage sometimes blamed itself even when the bot had visibly answered wrongly | the fix loop overrides triage when the failure record shows a bot reply, and uses the **last** failure record, not the first |
 | Kane could not operate Telegram's right-click → Reply menu in two runs | that step is optional in `group_privacy`; the verdict rests on privacy mode and mentions |
 | Web K collapses a reply keyboard behind a keyboard icon in the message bar; in two runs Kane did not expand it | `reply_keyboard` step reworded to expand it; still not passing, so reply keyboards are not verified live (the bot does send the keyboard) |
+| `inline_mode` failed while inline mode was off for the bot (`getMe.supports_inline_queries: false`); code cannot switch it on | switch it on once in @BotFather with `/setinline` (and a placeholder); after that `inline_mode` passed live |
 | Kane has no video output and draws no cursor | `run --record` films Kane's Chrome over CDP and logs its clicks; `botproof video` draws the cursor |
 
 Other limits: Telegram Web K only (not the official apps); needs a dedicated test Telegram account; multi-account group
-tests are not built; `inline_mode` needs inline mode switched on in @BotFather (`/setinline`); 18 of the 22 flows have passed
-live so far, the other 4 are written but not yet green ([Roadmap](#roadmap)).
+tests are not built; 18 of the 22 flows have passed live so far, the other 4 are written but not yet green ([Roadmap](#roadmap)).
 
 ## Repo map
 

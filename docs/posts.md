@@ -1,6 +1,6 @@
 # Public posts (drafts for the user to publish)
 
-Numbers below are from the real runs (11 of 22 flows passing live, 1 real bug caught). Post the X and LinkedIn ones, then put their links in docs/submission.md.
+The X and LinkedIn posts below went out with the numbers of that time (11 flows passing live, 1 real bug caught); their links are in docs/submission.md. The current count is 18 of 22 flows passing live, still 1 real bug caught.
 
 ## X / Twitter
 

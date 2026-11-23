@@ -19,3 +19,6 @@ In the group info, use "Add members" (or the add-member button), search for {{bo
 
 ## Check the greeting
 Verify the bot posts "Thanks for adding me!" in the group.
+
+## Make the bot admin again
+Make the bot admin again: group info → Edit → Administrators → Add Admin, pick {{bot_username}}, save. Verify the bot is listed under Administrators.
