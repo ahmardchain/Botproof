@@ -1,9 +1,10 @@
 name: Publish to npm
 
-# Push a tag like v0.1.1 to publish. Needs the repository secret NPM_TOKEN (an npm automation token).
+# Push a tag like v0.1.1, or start it by hand from the Actions tab, to publish. Needs the repository secret NPM_TOKEN (an npm automation token).
 on:
   push:
     tags: ["v*"]
+  workflow_dispatch:
 
 jobs:
   publish:
