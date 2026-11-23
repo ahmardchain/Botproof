@@ -1,8 +1,7 @@
 # Bugs Kane caught
 
 Every entry here is a real bug in the demo bot that a BotProof flow caught while Kane drove real Telegram Web.
-Each one links the flow, what Kane saw, the fix commit and the passing re-run. Staged bugs never go here;
-the regression replay used in the demo video lives on the `demo/regressions` branch and is labelled as such.
+Each one links the flow, what Kane saw, the fix commit and the passing re-run. Staged bugs never go here.
 
 ### 1. Anonymous group admins can't close a group order: the bot says "Only group admins"
 

@@ -3,15 +3,16 @@
 **Your bot works on your laptop. BotProof proves it works in Telegram.**
 
 BotProof runs plain-English test flows against your Telegram bot in the real Telegram Web client, driven by
-[Kane CLI](https://github.com/LambdaTest/kane-cli), and hands every failure to your coding agent to fix until the flow passes.
+[Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli), and hands every failure to your coding agent to fix until the flow passes.
 
-[Demo video](#) _(coming)_ · [Demo bot](#demo-bot) · [Evidence packs](#evidence-packs) · [Install](#install-and-run)
+[Demo video](https://youtu.be/mY_bRyfb-SE) · [Demo bot](#demo-bot) · [Evidence packs](#evidence-packs) · [Install](#install-and-run)
 
-> **Status (22 Nov 2026):** the CLI, the demo bot, 22 flows and the fix loop are built and unit-tested. The first
-> live Kane run passed on 22 Nov (`start`: Kane in real Telegram Web, logged in as the test account); the rest of the
-> spike is in progress, see [docs/FINDINGS.md](docs/FINDINGS.md). A flow is marked passing only with its evidence pack.
+> **Status (23 Nov 2026):** 11 of 22 flows pass live in real Telegram Web (✅ below), Kane caught 1 real bug in the
+> demo bot, and the fix loop fixed it end to end (Kane fail → Claude Code patch → redeploy → Kane pass). Run logs for
+> every live run are in [`botproof/runs/`](botproof/runs/); what was verified and how is in [docs/FINDINGS.md](docs/FINDINGS.md).
 
-<!-- GIF: Kane tapping through Brew Bot in Telegram Web (added after the first green run) -->
+**▶ [Watch the 3-minute demo](https://youtu.be/mY_bRyfb-SE)**
+
 
 ## What Kane saw (real screenshots)
 
@@ -33,12 +34,12 @@ render, a keyboard that never goes away, a Mini App that opens blank.
 
 ## For judges: start here
 
-Telegram is a third-party login we can't hand over, so per the rules' fallback clause every flow ships with a
-**recorded run**: its sealed Kane evidence pack (step 1, no login needed) and the demo video.
+Telegram is a third-party login we can't hand over, so every passing flow ships with a **recorded run** instead:
+its run log, Kane's screenshots and the demo video (no login needed).
 
 | Do this | You'll see |
 |---|---|
-| 1. **No login needed:** download a pack from [Evidence packs](#evidence-packs), then `npx @testmuai/kane-cli evidence serve <pack>.evidence` | Kane's run step by step: screenshots of Telegram Web, what it tapped, what it checked |
+| 1. **No login needed:** watch the [demo video](https://youtu.be/mY_bRyfb-SE) and look at [What Kane saw](#what-kane-saw-real-screenshots) | Kane in real Telegram Web: the bug, the fix, menus, the group order, the channel post |
 | 2. Read one flow, e.g. [`menu_pagination_test.md`](botproof/flows/private/menu_pagination_test.md) | The whole test is plain English |
 | 3. Read [a real fix-loop log](#the-closed-loop) | Kane fails a flow → Claude patches the bot → Kane re-runs → pass |
 | 4. Open the demo bot in Telegram and send `/start`, then `/menu` | The bot under test, live |
@@ -46,21 +47,21 @@ Telegram is a third-party login we can't hand over, so per the rules' fallback c
 
 ## What BotProof tests
 
-Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. ✅ = passed live (run logs in [`botproof/runs/`](botproof/runs/)); pack links are added when the evidence packs are published.
+Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. ✅ = passed live (run logs in [`botproof/runs/`](botproof/runs/)).
 
-| Area | What is checked | Flow | Pack |
-|---|---|---|---|
-| Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) ✅ · [main_menu](botproof/flows/private/main_menu_test.md) ✅ · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) | pending upload |
-| Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) ✅ · [item_details](botproof/flows/private/item_details_test.md) ✅ | pending upload |
-| Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) | – |
-| Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) ✅ | – |
-| Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) ✅ | – |
-| Media | order photo arrives with the right caption and order number | [conversation](botproof/flows/private/conversation_test.md) | – |
-| Mini App | opens inside Telegram, form + Telegram main button work, data reaches the bot | [miniapp_checkout](botproof/flows/private/miniapp_checkout_test.md) ✅ | pending upload |
-| Menu button | opens the Mini App; paying from it reaches the bot | [menu_button](botproof/flows/private/menu_button_test.md) | – |
-| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) ✅ · [group_order](botproof/flows/group/group_order_test.md) ✅ · [group_close_admin](botproof/flows/group/group_close_admin_test.md) ✅ · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) | – |
-| Channels | posts "today's special"; 👍/👎 votes edit the post; bot edits and deletes its post; comments in the discussion group reach the bot | [channel_special_vote](botproof/flows/channel/channel_special_vote_test.md) · [channel_edit_delete](botproof/flows/channel/channel_edit_delete_test.md) ✅ · [channel_comments](botproof/flows/channel/channel_comments_test.md) | – |
-| Stretch | inline mode; stale buttons after cancel | [inline_mode](botproof/flows/stretch/inline_mode_test.md) · [stale_button](botproof/flows/stretch/stale_button_test.md) | – |
+| Area | What is checked | Flow |
+|---|---|---|
+| Commands & deep links | `/start` welcome renders with a main menu of buttons (menu, checkout, help, cancel, add to group); `/help` lists commands; `t.me/<bot>?start=promo` applies the promo | [start](botproof/flows/private/start_test.md) ✅ · [main_menu](botproof/flows/private/main_menu_test.md) ✅ · [help](botproof/flows/private/help_test.md) · [deeplink](botproof/flows/private/deeplink_test.md) |
+| Inline keyboards | next/prev edits the same message; item opens details in place; URL button target; callback alert | [menu_pagination](botproof/flows/private/menu_pagination_test.md) ✅ · [item_details](botproof/flows/private/item_details_test.md) ✅ |
+| Reply keyboards | custom keyboard appears, sends "2", one-time keyboard is gone afterwards | [reply_keyboard](botproof/flows/private/reply_keyboard_test.md) |
+| Conversations | name → phone, re-asks on bad input, confirm; `/cancel` mid-way | [conversation](botproof/flows/private/conversation_test.md) · [conversation_cancel](botproof/flows/private/conversation_cancel_test.md) ✅ |
+| Message rendering | bold, code and link render; no raw `<b>`, `**`, `\` or "message is empty" | [formatting](botproof/flows/private/formatting_test.md) ✅ |
+| Media | order photo arrives with the right caption and order number | [conversation](botproof/flows/private/conversation_test.md) |
+| Mini App | opens inside Telegram, form + Telegram main button work, data reaches the bot | [miniapp_checkout](botproof/flows/private/miniapp_checkout_test.md) ✅ |
+| Menu button | opens the Mini App; paying from it reaches the bot | [menu_button](botproof/flows/private/menu_button_test.md) |
+| Groups | `/menu@bot`; group order edited with who tapped; admin `/close`; privacy mode (plain ignored, mention/reply answered); removed and re-added | [group_menu](botproof/flows/group/group_menu_test.md) ✅ · [group_order](botproof/flows/group/group_order_test.md) ✅ · [group_close_admin](botproof/flows/group/group_close_admin_test.md) ✅ · [group_privacy](botproof/flows/group/group_privacy_test.md) · [group_membership](botproof/flows/group/group_membership_test.md) |
+| Channels | posts "today's special"; 👍/👎 votes edit the post; bot edits and deletes its post; comments in the discussion group reach the bot | [channel_special_vote](botproof/flows/channel/channel_special_vote_test.md) · [channel_edit_delete](botproof/flows/channel/channel_edit_delete_test.md) ✅ · [channel_comments](botproof/flows/channel/channel_comments_test.md) |
+| Stretch | inline mode; stale buttons after cancel | [inline_mode](botproof/flows/stretch/inline_mode_test.md) · [stale_button](botproof/flows/stretch/stale_button_test.md) |
 
 Not built: tests that need a second Telegram account (new-member welcome, non-admin `/close` refusal, "only A can tap A's
 buttons"). They are possible with a second Chrome profile but were left out to keep the single-account flows reliable.
@@ -148,12 +149,14 @@ summary and photo, a checkout Mini App (`public/checkout.html`) with Telegram's 
 orders with admin-only `/close`, and a channel "today's special" with votes and comment replies.
 
 It runs on Vercel: `https://brewbot-botproof.vercel.app` (webhook `/api/webhook`, Mini App `/checkout.html`).
-Bot username, public test group and channel: _added once the bot token is set_.
+Bot: [@botproofbot](https://t.me/botproofbot) (shown as "Brew Bot"). Test group: [t.me/testingbotproofgroup](https://t.me/testingbotproofgroup). Test channel: [t.me/testingbotproof](https://t.me/testingbotproof).
 
 ## Evidence packs
 
-_Sealed packs for every passing flow go in the release attached to this repo once the spike has run. Each is checked
-for session data before publishing: packs contain screenshots of the test account's Telegram Web, never of a personal account._
+Every Kane run writes a sealed evidence pack (step screenshots, what Kane tapped and checked); the execution IDs are in
+each run's `SUMMARY.md` / `LOG.md` under [`botproof/runs/`](botproof/runs/). The packs themselves are not published
+yet (see [Roadmap](#roadmap)): before publishing, each must be checked for session data. They contain screenshots of the
+test account's Telegram Web, never of a personal account. Replay one locally with `kane-cli evidence serve <pack>`.
 
 ## Install and run
 
@@ -202,7 +205,7 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 - Multi-account group tests are not built.
 - Replying to a specific message (Telegram's right-click → Reply) is an optional step in `group_privacy`: in two live
   runs Kane could not operate that menu, so the flow's verdict rests on privacy mode and mentions.
-- The live spike has not run yet; see [docs/FINDINGS.md](docs/FINDINGS.md) for what is verified and what is not.
+- 11 of the 22 flows have passed live so far; the rest are written but not yet green ([Roadmap](#roadmap)).
 
 ## Repo map
 

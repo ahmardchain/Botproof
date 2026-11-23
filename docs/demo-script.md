@@ -1,17 +1,21 @@
-# Demo video script (3–5 min)
+# Demo video
 
-Record only real runs. The failure in 2:15 is a **regression replay** from the `demo/regressions` branch, which
-reintroduces a bug that Kane really caught during the build (from [caught.md](caught.md)). Say so on screen.
-If caught.md is still empty when recording, skip the replay and show a live `botproof fix` on whatever really fails.
+**Video:** https://youtu.be/mY_bRyfb-SE (3:22, 1080p)
 
-| Time | Screen | Voice-over |
+Made from real material only: Kane's own screenshots from the live runs (docs/screenshots/1–5), phone photos of the
+Mini App order in the test chat (6–7, labelled as phone photos), the real fix-loop log and diff, and the real commands.
+Narration: Kokoro TTS (free, open source), generated from [`tools/demo-video/narration.json`](../tools/demo-video/narration.json).
+Rendered with [`tools/demo-video/film/render-film.mjs`](../tools/demo-video/film/render-film.mjs).
+
+| Scene | Screen | What the voice says |
 |---|---|---|
-| 0:00 | Phone/Telegram: tapping /start, menu, Next, Add, typing a phone number… by hand | "This is how Telegram bots get tested: by hand, after every change. Unit tests mock the Bot API; they never see what the user sees." |
-| 0:30 | Terminal: `botproof init` (checks pass, test account login, group/channel links) then `cat botproof/flows/private/menu_pagination_test.md` | "BotProof: you write flows in plain English. Kane CLI runs them in real Telegram Web, logged in as a test account." |
-| 1:00 | Split: terminal `botproof run --tag smoke` + Chrome showing Kane driving Telegram Web: /start, Next/Prev editing in place, quantity keyboard, name/phone with a bad input, confirm + photo, Checkout Mini App, Pay | "Commands, inline keyboards editing in place, the reply keyboard, the conversation re-asking on bad input, and the Mini App: Kane taps them like a person." |
-| 1:45 | Kane in the test group: `/grouporder`, tap Latte → message shows the name. Channel: 👍 0 → 👍 1 | "Same bot in a group and a channel: the group order updates with who tapped; channel votes edit the post." |
-| 2:15 | Title card **"Regression replay: <bug> (real bug from day N, re-introduced on demo/regressions)"**. `botproof fix <flow>`: FAIL, Kane's remark, screenshot | "Here a real bug from the build is back. Kane sees it in Telegram…" |
-| 2:45 | Claude Code receiving the brief, editing `demo-bot/src/bot.ts`; a blocked edit to a flow file (hook message) | "…Claude gets the failing step, Kane's remark and the screenshot. It may only touch bot code; editing the test is refused." |
-| 3:10 | Bot restarts, Kane re-runs → PASS; `botproof/runs/<id>/LOG.md` with the diff | "Kane re-runs the flow. Green. Every attempt, diff and re-run is logged; after three tries it stops and asks a human." |
-| 3:30 | `botproof run` summary: all areas, credits, time; `kane-cli evidence serve` viewer; docs/caught.md | "Every area of the bot UI, with a sealed evidence pack per flow, and the bugs Kane caught while we built it." |
-| 4:15 | Belief line on screen | "Your bot works on your laptop. BotProof proves it works in Telegram." |
+| 1 Problem | Testing a bot by hand | Bots are tested by hand; unit tests mock the Bot API and miss what users see |
+| 2 What it is | A plain-English flow file, Kane in Telegram Web | Flows in plain English; Kane drives real Telegram Web as a test account |
+| 3 Private chat | Kane's screenshots: /start, menu edited in place, item alert | Commands, inline keyboards editing in place, callback alerts |
+| 4 Mini App | Phone photos of the checkout and the paid order | Kane opens the Mini App, presses Telegram's Pay button, the bot confirms |
+| 5 Group & channel | Kane's screenshots: group order, channel post | Group order shows who tapped; channel post, edit, delete |
+| 6 Bug & fix loop | Kane's failure screenshot, the diff, the passing screenshot | The real anonymous-admin `/close` bug, Claude's one-line fix, redeploy, pass |
+| 7 Install | The real commands | `kane-cli login`, clone, `botproof init`, `botproof run`, `--record` |
+| 8 Close | Belief line | The loop doesn't patch when Telegram is at fault; evidence packs; belief line |
+
+The bug in scene 6 is not staged: it is the one in [caught.md](caught.md), found on 22 Nov.

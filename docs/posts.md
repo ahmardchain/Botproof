@@ -1,15 +1,15 @@
 # Public posts (drafts for the user to publish)
 
-Fill every `<…>` with real numbers from your runs before posting. Don't post claims the runs don't back.
+Numbers below are from the real runs (11 of 22 flows passing live, 1 real bug caught). Post the X and LinkedIn ones, then put their links in docs/submission.md.
 
 ## X / Twitter
 
-> Telegram bots get tested by hand: send /start, tap a button, repeat after every change.
+> I built BotProof for #KaneCLIHack: @TestMuAI's Kane CLI tests a Telegram bot in real Telegram Web, and Claude Code fixes what fails.
 >
-> I built BotProof for the #KaneCLIHack: plain-English flows that @TestMuAI's Kane CLI runs in real Telegram Web, logged in as a test account. When a flow fails, Claude Code gets the failure and fixes the bot. Kane re-runs until green.
+> 11 flows green. It caught a real bug the unit tests never would.
 >
-> <n> flows: commands, inline + reply keyboards, a conversation, a Mini App, groups, channels.
-> <video link> · <repo link>
+> https://youtu.be/mY_bRyfb-SE
+> https://github.com/ahmardchain/Botproof
 
 ## LinkedIn
 
@@ -23,9 +23,9 @@ Fill every `<…>` with real numbers from your runs before posting. Don't post c
 > • Kane CLI drives the real Telegram Web client in Chrome and checks what a user would see.
 > • When a flow fails, the failing step, Kane's remark and a screenshot go to Claude Code, which patches the bot (only the bot: the tests are locked), and Kane re-runs. Three tries, then it asks a human.
 >
-> It covers <list the areas that pass>. While building the demo bot, Kane caught <n> real bugs: <one example>.
+> 11 flows pass live: commands, inline keyboards editing in place, message formatting, a Mini App checkout, group orders and channel posts. While building the demo bot, Kane caught a real bug: the bot refused /close from the group's own owner when they posted as an anonymous admin. Claude Code fixed it in one attempt and Kane confirmed the fix.
 >
-> Video: <link> · Code: <link>
+> Video: https://youtu.be/mY_bRyfb-SE · Code: https://github.com/ahmardchain/Botproof
 
 ## Reddit (r/TelegramBots) / Hacker News (Show HN)
 
@@ -36,6 +36,6 @@ Fill every `<…>` with real numbers from your runs before posting. Don't post c
 >
 > A fix loop hands failures to a coding agent, which may only edit the bot's code, then re-runs the flow (max 3 attempts, everything logged).
 >
-> Limits, honestly: needs a test Telegram account and Chrome, Telegram Web K only, flows run sequentially (one logged-in profile), <spike limits>.
+> Limits, honestly: needs a test Telegram account and Chrome, Telegram Web K only, flows run sequentially (one logged-in profile), and multi-account group tests aren't built yet.
 >
-> Repo: <link>. Built for the KaneCLI hackathon.
+> Repo: https://github.com/ahmardchain/Botproof · Video: https://youtu.be/mY_bRyfb-SE. Built for the KaneCLI hackathon.

@@ -1,6 +1,6 @@
 # Submission form text (draft)
 
-Replace `<…>` with real results before submitting. Submit early on 26 Nov (deadline 18:29 UTC).
+Submit early on 26 Nov (deadline 11:59 PM IST = 18:29 UTC).
 
 **Project name:** BotProof
 
@@ -24,7 +24,10 @@ In the closed loop, Kane's failure (failing step, Kane's remark, failure record 
 handed to Claude Code, which patches the bot code only (allowlist enforced by a PreToolUse hook and a git-snapshot revert);
 the bot restarts and Kane re-runs the failed flow, up to 3 attempts, then escalates to a human. Every attempt is logged with its diff.
 
-**What Kane caught/proved:** <n> real bugs caught while building the demo bot (docs/caught.md); <n>/<n> flows passing
-with sealed evidence packs.
+**What Kane caught/proved:** 1 real bug caught while building the demo bot: anonymous group admins couldn't close a
+group order (the bot told the group's own owner "Only group admins"). Kane caught it in real Telegram Web, the fix loop
+handed it to Claude Code, which patched one condition; BotProof redeployed and Kane passed the re-run (docs/caught.md,
+botproof/runs/fix-2026-11-22T18-25-38/LOG.md). 11 of 22 flows pass live, across commands, inline keyboards, the
+conversation's cancel path, message formatting, the Mini App checkout, groups and channels.
 
-**Links:** repo <…> · video <…> · demo bot <t.me/…> · posts <…>, <…>
+**Links:** repo https://github.com/ahmardchain/Botproof · video https://youtu.be/mY_bRyfb-SE · demo bot https://t.me/botproofbot · posts <X link>, <LinkedIn link>
