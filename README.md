@@ -2,10 +2,17 @@
 
 **Your bot works on your laptop. BotProof proves it works in Telegram.**
 
-BotProof runs plain-English test flows against your Telegram bot in the real Telegram Web client, driven by
-[Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli), and hands every failure to your coding agent to fix until the flow passes.
+End-to-end tests for Telegram bots: plain-English flows, run by [Kane CLI](https://www.npmjs.com/package/@testmuai/kane-cli) in real Telegram Web, fixed by your coding agent until they pass.
 
-[Demo video](https://youtu.be/mY_bRyfb-SE) · [Demo bot](#demo-bot) · [Evidence packs](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs) · [Install](#install-and-run)
+| Kane run | Result |
+|---|---|
+| `group_close_admin` before | ❌ FAIL at step 3: anonymous group owner's `/close` refused |
+| Claude Code patch | one condition in `demo-bot/src/bot.ts`, redeployed to Vercel |
+| `group_close_admin` after | ✅ PASS on the first retry |
+
+Replay both runs, no Telegram login: [evidence packs](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs) · [full fix log](botproof/runs/fix-2026-11-22T18-25-38/LOG.md) · [the bug explained](docs/caught.md)
+
+[Demo video](https://youtu.be/mY_bRyfb-SE) · [Demo bot](#demo-bot) · [For judges](#for-judges-start-here) · [Install](#install-and-run)
 
 > **Status (23 Nov 2026):** 11 of 22 flows pass live in real Telegram Web (✅ below), Kane caught 1 real bug in the
 > demo bot, and the fix loop fixed it end to end (Kane fail → Claude Code patch → redeploy → Kane pass). Run logs for
