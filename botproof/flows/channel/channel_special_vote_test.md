@@ -15,7 +15,7 @@ Open https://web.telegram.org/k/#@{{bot_username}} and wait until the chat is op
 Type /special and press Enter. Verify the bot replies "Posted today's special".
 
 ## Find the post
-Open https://web.telegram.org/k/#@{{channel_username}} and wait until the channel's posts are shown (not a t.me preview page). Check you are in the CHANNEL: its header shows the channel name with a "subscribers" count, and there is no message box for typing (a group would show "members" and a message box; if you see that, you are in the discussion group — open the channel from its header link instead). Verify the newest post is "Today's special" in bold with today's drink in italics and two buttons "👍 0" and "👎 0".
+Open https://web.telegram.org/k/#@{{channel_username}}. If that does not show the channel, open https://web.telegram.org/k/ and click the chat named exactly "Testing" with the orange "T" avatar in the chat list. Do NOT open "Testing g" (the green "TG" avatar): that is the discussion group, which also shows copies of the channel posts. Check you are in the CHANNEL: its header shows "Testing" with a "subscribers" count, and the bottom bar says "Broadcast" or has no message box (the group shows "members" and "Send anonymously"). Verify the newest post is "Today's special" in bold with today's drink in italics and two buttons "👍 0" and "👎 0".
 
 ## Vote up
 Click "👍 0" under that post. Verify the button changes to "👍 1" on the same post and a notice "You voted 👍" appears.

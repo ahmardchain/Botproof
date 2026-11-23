@@ -15,7 +15,7 @@ Open https://web.telegram.org/k/#@{{bot_username}} and wait until the chat is op
 Type /special and press Enter. Verify the bot replies "Posted today's special".
 
 ## Comment on the post
-Open https://web.telegram.org/k/#@{{channel_username}} and wait until the channel's posts are shown (not a t.me preview page). Check you are in the CHANNEL (header shows "subscribers", no message box). At the bottom of the newest "Today's special" post bubble, click the "Leave a comment" bar (or "N comments"). A comments view opens that shows that post at the top and has its own message box. Type "looks delicious" in THAT comments view and send it. Verify your comment appears in the thread under the post, not as a normal message in a chat.
+Open https://web.telegram.org/k/#@{{channel_username}}. If that does not show the channel, open https://web.telegram.org/k/ and click the chat named exactly "Testing" with the orange "T" avatar in the chat list. Do NOT open "Testing g" (the green "TG" avatar): that is the discussion group, which also shows copies of the channel posts. Check you are in the CHANNEL: its header shows "Testing" with a "subscribers" count, and the bottom bar says "Broadcast" or has no message box (the group shows "members" and "Send anonymously"). At the bottom of the newest "Today's special" post bubble, click the "Leave a comment" bar (or "N comments"). A comments view opens that shows that post at the top and has its own message box. Type "looks delicious" in THAT comments view and send it. Verify your comment appears in the thread under the post, not as a normal message in a chat.
 
 ## Bot answers the comment
 Verify that within 15 seconds the bot replies to that comment with "Thanks for the feedback".

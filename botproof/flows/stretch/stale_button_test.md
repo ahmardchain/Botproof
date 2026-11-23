@@ -18,4 +18,7 @@ Type /cancel and press Enter. Type /menu and press Enter. Click "☕ Espresso ·
 Type /cancel and press Enter. Verify the bot replies "Order cancelled".
 
 ## Tap the stale Confirm
-Scroll up to the "Order summary" message and click its "✅ Confirm" button. Verify a popup says "This order has expired" and no photo or "Confirmed" text is produced.
+Scroll up to the "Order summary" message and click its "✅ Confirm" button. Verify a Telegram popup appears whose text contains "This order has expired".
+
+## Nothing was confirmed
+Click OK on that popup. Verify that the newest message in the chat is still the bot's "Order cancelled" reply, and that no "Confirmed" text and no drink photo appeared below it.

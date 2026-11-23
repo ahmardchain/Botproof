@@ -45,7 +45,9 @@ const CSS = `*{box-sizing:border-box}html,body{margin:0;width:${W}px;height:${H}
 .cap{position:absolute;left:0;right:0;bottom:0;height:104px;background:#0b0f13;color:#e8edf2;display:flex;align-items:center;padding:0 56px;font-size:38px}
 .cap b{color:#7cc4ff;margin-right:20px}.cap span{margin-left:auto;color:#6b7b8a;font-size:30px}`;
 
-function renderPng(html: string, out: string, chrome: string, transparentKey = false) {
+function renderPng(html: string, outPath: string, chrome: string, transparentKey = false) {
+  // Chrome on Windows does not resolve a relative --screenshot path against our cwd.
+  const out = resolve(outPath);
   const file = out.replace(/\.png$/, ".html");
   writeFileSync(file, `<!doctype html><html><head><meta charset="utf-8"><style>${CSS}${transparentKey ? "html,body{background:#ff00ff}" : ""}</style></head><body>${html}</body></html>`);
   const profile = join(tmpdir(), `botproof-video-${process.pid}`);

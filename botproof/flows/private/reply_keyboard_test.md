@@ -18,7 +18,7 @@ Type /cancel in the message box and press Enter. Verify the bot replies with a m
 Type /menu and press Enter. Click the "🥛 Latte · $4.50" button, then click "➕ Add Latte" and close the popup alert with OK.
 
 ## Keyboard appears
-Verify the bot asks "How many Lattes would you like?" and a custom keyboard with the buttons 1, 2, 3 and Cancel is shown below the message input.
+If the "Latte added to your order" popup is still open, click its OK button first. If Telegram shows only a keyboard icon (⌘) inside the message input bar instead of the keyboard, click that icon once to expand it. Verify the bot asks "How many Lattes would you like?" and a custom keyboard with the buttons 1, 2, 3 and Cancel is shown below the message input.
 
 ## Tap 2
 Click the "2" button on that custom keyboard. Verify a message "2" is sent from the test account and the bot replies "Got it: 2 × Latte."

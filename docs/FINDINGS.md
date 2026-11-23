@@ -2,6 +2,30 @@
 
 Rule for this file: only what was observed. Anything not yet run says **NOT RUN** and why.
 
+## Remaining flows — 23 Nov 2026, 16:49–18:08: 7 more pass (18 of 22), no new bot bug
+
+One `botproof run <flow>` per flow, easiest first, at most 2 tries per flow, budget 2,000 credits (≈935 used).
+
+| Flow | Result | Tries | Credits | Pack(s) | What happened |
+|---|---|---|---|---|---|
+| help | ✅ pass | 1 | 39.6 | `385d344d` | |
+| deeplink | ✅ pass | 1 | 35.5 | `f1958bda` | Web K's `#?tgaddr=tg://resolve?…&start=promo` route works: the welcome shows "Promo applied: 10% off your first order". The deep-link fallback in the assumptions table was not needed. |
+| reply_keyboard | ✘ fail ×2 | 2 | 110.7 | `9c360769`, `ca267048` | Not the bot. Both times the bot asked "How many Lattes would you like?" and the message bar showed Web K's ⌘ keyboard icon (the quantity keyboard collapsed), but Kane never expanded it. Run 1 also verified while the "Latte added" popup was still open. **Reworded once** (step "Keyboard appears": close the popup if open; if only the ⌘ icon shows, click it to expand) — same check. Run 2 failed the same way. Kane triaged it as an app defect; the code (`quantityKeyboard()` sent with the question, `bot.ts:190`) and both screenshots say otherwise. |
+| conversation | ✅ pass | 1 | 141.6 | `274e1e7a` | Bad name and bad phone re-asked, summary, confirm with photo. |
+| stale_button | ✘ fail ×2 | 2 | 169.8 | `8aa44df1`, `57166ef4` | Not the bot. Run 1: the screenshot shows the popup "This order has expired. Send /menu to start again." and no photo or "Confirmed"; Kane's own triage says its assertion used "unresolved state placeholders". **Reworded once**: the last step was split into two checks (popup text; then, after OK, the newest message is still "Order cancelled" with no "Confirmed"/photo below) — same check. Run 2 failed earlier: Kane missed an Order summary that was on screen (its triage: `state_transition_bug`). |
+| menu_button | ✅ pass | 1 | 48.5 | `018b430d` | |
+| inline_mode | ✅ pass | 1 | 51.8 | `103b0411` | Needed inline mode switched on in @BotFather first (`getMe.supports_inline_queries` was `false` until `/setinline` was completed). |
+| channel_special_vote | ✅ pass (2nd try) | 2 | 151.2 | fail `615151c4`, pass `61f54ea3` | Run 1: Kane ended up in the discussion group "Testing g", which shows copies of the channel posts. `@testingbotproof` does resolve to the channel (`getChat`: type channel, linked to the group). **Reworded once** (also in channel_comments): open `#@testingbotproof`, else click the chat named "Testing" with the orange "T" avatar; never "Testing g"; how to tell channel ("subscribers", "Broadcast") from group ("members", "Send anonymously"). Run 2 passed, votes included. |
+| channel_comments | ✘ fail ×2 | 2 | 82.7 | `1b440056`, `220c8920` | Not the bot (not reached). With the reworded navigation Kane did reach the channel both times — its own triage says the screen showed "Testing", "4 subscribers" and "Broadcast" — but the channel checkpoint was evaluated with "blank placeholder fields" (`automation_bug/config_issue`) and failed. The same text passed in channel_special_vote. The anonymous-comment reply fix (`e355275`) is still not verified live. |
+| group_privacy | ✅ pass¹ | 1 | 103.3 | `511648ef` | Plain message ignored, mention answered. The optional "Reply is answered" step was **skipped**, so the reply path is not verified. |
+| group_membership | stopped | — | (not recorded) | — | Claude Code stopped the run for low memory during step 2 "Remove the bot". Afterwards the bot was still in the group but as `member`, no longer `administrator`; it has to be made admin again by hand. Not retried. |
+
+¹ partial: privacy mode and mentions only.
+
+Kane-side issues seen today, none of them bot bugs: a collapsed reply keyboard it does not expand; checkpoint assertions
+evaluated as "unresolved/blank placeholders" while the screen matched (stale_button run 1, channel_comments ×2); and
+confusing a channel with its discussion group, which shows the same posts.
+
 ## First live run — 22 Nov 2026, 14:35 (Windows 11, Node 24.14.0, Chrome, kane-cli 0.10.7)
 
 Run on the developer's machine against the deployed bot `@botproofbot` (Vercel), test account logged into

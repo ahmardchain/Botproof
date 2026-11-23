@@ -27,8 +27,12 @@ the bot restarts and Kane re-runs the failed flow, up to 3 attempts, then escala
 **What Kane caught/proved:** 1 real bug caught while building the demo bot: anonymous group admins couldn't close a
 group order (the bot told the group's own owner "Only group admins"). Kane caught it in real Telegram Web, the fix loop
 handed it to Claude Code, which patched one condition; BotProof redeployed and Kane passed the re-run (docs/caught.md,
-botproof/runs/fix-2026-11-22T18-25-38/LOG.md). 11 of 22 flows pass live, across commands, inline keyboards, the
-conversation's cancel path, message formatting, the Mini App checkout, groups and channels.
+botproof/runs/fix-2026-11-22T18-25-38/LOG.md). 18 of 22 flows pass live, across commands and deep links, inline
+keyboards, the full conversation (bad input re-asked, confirm with photo) and its cancel path, message formatting, the
+Mini App from a keyboard button and from the menu button, inline mode, groups (menus, group orders, admin-only close,
+privacy mode) and channels (posting, votes, edit and delete). The other 4 (reply keyboard, stale button, channel
+comments, remove/re-add) failed on Kane-side issues while the bot behaved correctly, or were cut short; docs/FINDINGS.md
+records each one.
 
 **Evidence packs (no login needed):** https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs
 
