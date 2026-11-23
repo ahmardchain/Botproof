@@ -122,7 +122,10 @@ See [docs/caught.md](docs/caught.md). Only bugs Kane actually caught while build
 1. **Anonymous group admins couldn't close a group order**: the bot answered "Only group admins" to the group's own owner.
    Caught by `group_close_admin`, fixed by the loop in [`80593e8`](https://github.com/ahmardchain/Botproof/commit/80593e8).
 
-## Video proof of every run
+## Video proof of every run (new)
+
+_Built and tested on 22–23 Nov against a test page driven the way Kane drives Chrome; not yet used on a live Telegram run
+(see [Roadmap](#roadmap))._
 
 Kane itself has no video output, but BotProof owns the Chrome that Kane drives, so it can film it:
 
@@ -174,6 +177,18 @@ node cli/dist/index.js fix --tag smoke
 
 To test your own bot instead of Brew Bot: point `bot_username` at it in `botproof/botproof.config.json`, write flows in
 `botproof/flows/`, and set `fix.editable` to your bot's source folders.
+
+## Roadmap
+
+- **Live Telegram footage in the demo video.** `run --record` + `botproof video` (real-speed footage, pauses cut,
+  cursor from Kane's real clicks) is built; next is recording the passing flows with it and cutting those clips into
+  the narrated demo. The current demo video uses Kane's screenshots and phone photos of the chat.
+- **The remaining flows:** `conversation`, `reply_keyboard`, `menu_button`, `help`, `deeplink`, `stale_button`,
+  `channel_special_vote`, `channel_comments`, `group_privacy`, `group_membership`, `inline_mode` (written, not yet passing live).
+- **Second test account** for multi-user group tests (new-member welcome, non-admins refused, only A can tap A's buttons).
+- **Parallel runs:** one Chrome profile per worker, so a suite doesn't run one flow at a time.
+- **CI:** a GitHub Action that runs the smoke flows headless on every push to the bot.
+- **Evidence packs published** for every passing flow, so judges and users can replay runs without logging in.
 
 ## Limits
 
