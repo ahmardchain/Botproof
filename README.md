@@ -52,6 +52,21 @@ its Kane evidence pack ([release](https://github.com/ahmardchain/Botproof/releas
 | 4. Open the demo bot in Telegram and send `/start`, then `/menu` | The bot under test, live |
 | 5. Run it yourself with your own **test** Telegram account: [Install and run](#install-and-run) | `botproof run start menu_pagination group_order` prints PASS/FAIL per flow with an evidence link |
 
+## Built on Kane CLI by TestMu AI
+
+BotProof is a thin layer around Kane; Kane is the only thing that touches Telegram. What it uses, all verified against Kane CLI 0.10.7 ([FINDINGS](docs/FINDINGS.md#what-was-verified-22-nov)):
+
+| Kane feature | How BotProof uses it |
+|---|---|
+| `testmd run` + plain-English `_test.md` flows | one flow per user journey; `local_context` frontmatter gives Kane Telegram-specific tips ([telegram-context.md](botproof/telegram-context.md)) |
+| `--cdp-endpoint` | BotProof starts Chrome on the test account's profile and attaches Kane to it, so Kane works in a logged-in Telegram Web |
+| `--variables-file`, `--timeout` | bot, group and channel names come from `botproof.config.json`; long Telegram steps get time |
+| `--agent` NDJSON stream | `test_md_step_start/end`, `run_end` (credits), `test_md_done` → live progress, per-flow time and credits |
+| Exit codes 0 / 1 / 2 / 3 | pass / bot failure / setup error / cancelled: only exit 1 can reach the fix loop |
+| Evidence packs (failure record, screenshots, triage) | the failing step, Kane's remark, screenshot and Kane's own triage go into the agent's brief; triage blaming automation or Telegram stops the loop without patching |
+| Recorded replays | an unchanged flow replays from Kane's cache: `item_details` passed in 63 s for 0 credits |
+| `evidence serve`, `evidence merge` | anyone replays a run without logging in ([packs](https://github.com/ahmardchain/Botproof/releases/tag/evidence-packs)); `botproof run --merge` joins a suite's packs into one |
+
 ## What BotProof tests
 
 Every row is a `_test.md` flow Kane runs in Telegram Web against the demo bot. ✅ = passed live (run logs in [`botproof/runs/`](botproof/runs/)).
@@ -205,19 +220,20 @@ To test your own bot instead of Brew Bot: point `bot_username` at it in `botproo
 - **Parallel runs:** one Chrome profile per worker, so a suite doesn't run one flow at a time.
 - **CI:** a GitHub Action that runs the passing flows headless on every push to the bot.
 
-## Limits
+## Kane limits we hit, and how we worked around them
 
-- Needs a dedicated test Telegram account and Chrome on the machine running Kane. Its Telegram Web session lives in a
-  Chrome profile outside the repo (`~/.botproof/chrome-profile`); never commit or share it. For each flow BotProof starts
-  Chrome on a fresh copy of it and attaches Kane over CDP (`--cdp-endpoint`), because when Kane launched Chrome itself it
-  sometimes used a blank temp profile or emptied the one it was given ([FINDINGS](docs/FINDINGS.md)).
-- Telegram Web K only (`web.telegram.org/k/`); the official apps are not tested.
-- Flows run one after another, not in parallel: `kane-cli testrun` gives each worker a fresh Chrome profile, which has no
-  Telegram session ([FINDINGS](docs/FINDINGS.md#design-decision-from-the-docs-testmd-run-per-flow-not-testrun)).
-- Multi-account group tests are not built.
-- Replying to a specific message (Telegram's right-click → Reply) is an optional step in `group_privacy`: in two live
-  runs Kane could not operate that menu, so the flow's verdict rests on privacy mode and mentions.
-- 11 of the 22 flows have passed live so far; the rest are written but not yet green ([Roadmap](#roadmap)).
+| What we hit | Workaround |
+|---|---|
+| When Kane launched Chrome itself, it sometimes used a blank temp profile or emptied the logged-in one | BotProof owns Chrome: it copies the master profile (`~/.botproof/chrome-profile`, never committed) for each flow, starts Chrome on the copy and attaches Kane with `--cdp-endpoint` |
+| `testmd run` has no `--chrome-profile` flag (only `kane-cli run` does) | same: CDP attach instead of a profile flag |
+| `kane-cli testrun` gives each worker a fresh profile, so no Telegram session | flows run one after another with `testmd run`; packs are joined with `evidence merge` ([FINDINGS](docs/FINDINGS.md#design-decision-from-the-docs-testmd-run-per-flow-not-testrun)) |
+| Telegram Web tips covered the screen; "Updating…" after a profile copy made Kane click into nothing | `local_context` tells Kane to close tips; BotProof waits until Telegram Web is connected before starting Kane, and fails fast (0 credits) on the login screen |
+| Kane's triage sometimes blamed itself even when the bot had visibly answered wrongly | the fix loop overrides triage when the failure record shows a bot reply, and uses the **last** failure record, not the first |
+| Kane could not operate Telegram's right-click → Reply menu in two runs | that step is optional in `group_privacy`; the verdict rests on privacy mode and mentions |
+| Kane has no video output and draws no cursor | `run --record` films Kane's Chrome over CDP and logs its clicks; `botproof video` draws the cursor |
+
+Other limits: Telegram Web K only (not the official apps); needs a dedicated test Telegram account; multi-account group
+tests are not built; 11 of the 22 flows have passed live so far, the rest are written but not yet green ([Roadmap](#roadmap)).
 
 ## Repo map
 
