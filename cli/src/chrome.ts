@@ -232,7 +232,21 @@ export async function startScreencast(endpoint: string, outDir: string): Promise
   writeFileSync(list, "");
   const send = (method: string, params: object = {}) => ws.send(JSON.stringify({ id: ++id, method, params }));
   ws.onmessage = (ev) => {
-    const msg = JSON.parse(String(ev.data)) as { method?: string; params?: { data: string; sessionId: number; metadata: { timestamp?: number } } };
+    const msg = JSON.parse(String(ev.data)) as { id?: number; method?: string; result?: { result?: { value?: unknown } }; params?: { data: string; sessionId: number; metadata: { timestamp?: number }; name?: string; payload?: string } };
+    // Kane's real clicks (Kane drives Chrome with input events, so no cursor is ever drawn): log where and when
+    if (msg.method === "Runtime.bindingCalled" && msg.params?.name === "__botproofClick") {
+      try {
+        const c = JSON.parse(msg.params.payload ?? "{}") as { x: number; y: number };
+        appendFileSync(join(outDir, "clicks.txt"), `${(Date.now() / 1000).toFixed(3)} ${Math.round(c.x)} ${Math.round(c.y)}\n`);
+      } catch {
+        /* ignore malformed */
+      }
+      return;
+    }
+    if (msg.id === 90001 && msg.result?.result?.value) {
+      writeFileSync(join(outDir, "viewport.json"), JSON.stringify(msg.result.result.value));
+      return;
+    }
     if (msg.method !== "Page.screencastFrame" || !msg.params) return;
     const { data, sessionId, metadata } = msg.params;
     send("Page.screencastFrameAck", { sessionId });
@@ -243,6 +257,14 @@ export async function startScreencast(endpoint: string, outDir: string): Promise
     if (last) appendFileSync(list, `file '${basename(last.file)}'\nduration ${Math.max(0.01, t - last.t).toFixed(3)}\n`);
     last = { file, t };
   };
+  // click logger: a page-level capture listener reports every mousedown through a CDP binding
+  const clickHook = `(() => { if (window.__bpHooked) return; window.__bpHooked = true;
+    document.addEventListener("mousedown", (e) => { try { window.__botproofClick(JSON.stringify({ x: e.clientX, y: e.clientY })); } catch (_) {} }, true); })()`;
+  send("Runtime.enable");
+  send("Runtime.addBinding", { name: "__botproofClick" });
+  send("Page.addScriptToEvaluateOnNewDocument", { source: clickHook });
+  send("Runtime.evaluate", { expression: clickHook });
+  ws.send(JSON.stringify({ id: 90001, method: "Runtime.evaluate", params: { expression: "({ w: innerWidth, h: innerHeight })", returnByValue: true } }));
   send("Page.startScreencast", { format: "jpeg", quality: 75, maxWidth: 1920, maxHeight: 1080, everyNthFrame: 1 });
   return {
     stop: async () => {

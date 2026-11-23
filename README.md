@@ -132,7 +132,8 @@ node cli/dist/index.js video                          # → botproof/recordings/
 ```
 
 Each video is a title card, Kane's live footage of real Telegram Web (sped up to about a minute), a caption naming the
-step Kane is on, and a PASS/FAIL card with Kane's remark: something to attach to a pull request or show a client.
+step Kane is on, a cursor that glides to every spot Kane really clicked (Kane drives Chrome with input events and never
+shows a cursor, so BotProof logs each click during `--record` and draws it), and a PASS/FAIL card with Kane's remark: something to attach to a pull request or show a client.
 It uses Chrome's own screencast (CDP `Page.startScreencast`) and ffmpeg (`ffmpeg-static` is an optional dependency).
 
 ## Demo bot

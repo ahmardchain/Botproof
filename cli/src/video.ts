@@ -88,14 +88,35 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
   const t0 = times[0] ?? meta.steps[0]?.t ?? 0;
   const steps = meta.steps.map((s, i) => ({ ...s, a: Math.max(0, s.t - t0), b: i + 1 < meta.steps.length ? Math.max(0, meta.steps[i + 1].t - t0) : natural + 5 }));
   const inputs = ["-f", "concat", "-safe", "0", "-i", join(dir, "frames.txt")];
-  let graph = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,setsar=1[v0]`;
+  let graph = `[0:v]scale=${W}:${H}:force_original_aspect_ratio=decrease,pad=${W}:${H}:(ow-iw)/2:(oh-ih)/2:color=0x0f1419,setsar=1,fps=30[v0]`; // constant frame rate so captions/cursor animate between page changes
   steps.forEach((s, i) => {
     const png = join(work, `cap-${i}.png`);
-    renderPng(`<div class="cap"><b>Step ${i + 1}/${steps.length}</b>${esc(s.heading)}<span>Kane · live · ${speed}×</span></div>`, png, opts.chrome, true);
+    renderPng(`<div class="cap"><b>Step ${i + 1}/${steps.length}</b>${esc(s.heading)}<span>Kane · live · ${speed}× · cursor = Kane's real clicks</span></div>`, png, opts.chrome, true);
     inputs.push("-i", png);
     graph += `;[${i + 1}:v]colorkey=0xff00ff:0.25[c${i}];[v${i}][c${i}]overlay=0:0:enable='between(t,${s.a.toFixed(2)},${s.b.toFixed(2)})'[v${i + 1}]`;
   });
-  graph += `;[v${steps.length}]setpts=PTS/${speed},fps=30,fade=t=in:d=0.3[out]`;
+  // cursor drawn from Kane's real clicks (clicks.txt, logged during --record); Kane itself never shows a cursor
+  let last = `v${steps.length}`;
+  const clicks = readClicks(dir, t0, natural);
+  const vp = existsSync(join(dir, "viewport.json")) ? (JSON.parse(readFileSync(join(dir, "viewport.json"), "utf8")) as { w: number; h: number }) : undefined;
+  const frame = firstFrameSize(dir, opts.ffmpeg);
+  if (clicks.length && vp && frame) {
+    const s = Math.min(W / frame.w, H / frame.h);
+    const padX = (W - frame.w * s) / 2, padY = (H - frame.h * s) / 2;
+    const pts = clicks.map((c) => ({ t: c.t, x: padX + c.x * (frame.w / vp.w) * s, y: padY + c.y * (frame.h / vp.h) * s }));
+    const cur = join(work, "cursor.png"), rip = join(work, "ripple.png");
+    renderPng(`<svg width="64" height="64" viewBox="0 0 64 64" style="position:absolute;left:0;top:0"><path d="M6 4 L6 50 L18 39 L27 59 L35 55 L26 36 L42 36 Z" fill="#ffffff" stroke="#111" stroke-width="3" stroke-linejoin="round"/></svg>`, cur, opts.chrome, true);
+    renderPng(`<div style="position:absolute;left:0;top:0;width:96px;height:96px;border-radius:50%;border:6px solid #2aabee;background:rgba(42,171,238,.35)"></div>`, rip, opts.chrome, true);
+    const n = inputs.filter((x) => x === "-i").length;
+    inputs.push("-i", cur, "-i", rip);
+    const X = cursorExpr(pts, "x"), Y = cursorExpr(pts, "y");
+    const enableRip = pts.map((p) => `between(t,${p.t.toFixed(2)},${(p.t + 0.45).toFixed(2)})`).join("+");
+    const rx = ripExpr(pts, "x"), ry = ripExpr(pts, "y");
+    graph += `;[${n}:v]crop=64:64:0:0,colorkey=0xff00ff:0.3[cur];[${n + 1}:v]crop=96:96:0:0,colorkey=0xff00ff:0.3[rip]`;
+    graph += `;[${last}][rip]overlay=x='${rx}-48':y='${ry}-48':enable='${enableRip}'[vr];[vr][cur]overlay=x='${X}-6':y='${Y}-4'[vc]`;
+    last = "vc";
+  }
+  graph += `;[${last}]setpts=PTS/${speed},fps=30,fade=t=in:d=0.3[out]`;
   ff([...inputs, "-filter_complex", graph, "-map", "[out]", ...enc, join(work, "2-live.mp4")]);
 
   // 3. verdict card
@@ -109,6 +130,41 @@ export function makeVideo(dir: string, opts: { speed?: number; ffmpeg: string; c
   ff(["-f", "concat", "-safe", "0", "-i", list, "-c", "copy", "-movflags", "+faststart", out]);
   rmSync(work, { recursive: true, force: true });
   return out;
+}
+
+
+/** Clicks logged during --record, in recording time (seconds since the first frame). */
+function readClicks(dir: string, t0: number, natural: number): { t: number; x: number; y: number }[] {
+  const f = join(dir, "clicks.txt");
+  if (!existsSync(f)) return [];
+  return readFileSync(f, "utf8").trim().split("\n").filter(Boolean).map((l) => {
+    const [t, x, y] = l.split(" ").map(Number);
+    return { t: t - t0, x, y };
+  }).filter((c) => c.t >= 0 && c.t <= natural && Number.isFinite(c.x) && Number.isFinite(c.y));
+}
+
+function firstFrameSize(dir: string, ffmpeg: string): { w: number; h: number } | undefined {
+  const r = spawnSync(ffmpeg, ["-hide_banner", "-i", join(dir, "f000001.jpg")], { encoding: "utf8" });
+  const m = /, (\d{2,5})x(\d{2,5})/.exec(r.stderr);
+  return m ? { w: Number(m[1]), h: Number(m[2]) } : undefined;
+}
+
+/** Cursor position over time: rests on each click, glides (smoothstep, 0.7 s) to the next one. */
+function cursorExpr(pts: { t: number; x: number; y: number }[], k: "x" | "y"): string {
+  const v = (i: number) => pts[i][k].toFixed(1);
+  let e = v(pts.length - 1);
+  for (let i = pts.length - 1; i >= 1; i--) {
+    const b = pts[i].t, a = Math.max(pts[i - 1].t, b - 0.7);
+    const u = `((t-${a.toFixed(2)})/${Math.max(0.05, b - a).toFixed(2)})`;
+    e = `if(lt(t,${a.toFixed(2)}),${v(i - 1)},if(lt(t,${b.toFixed(2)}),${v(i - 1)}+(${v(i)}-${v(i - 1)})*${u}*${u}*(3-2*${u}),${e}))`;
+  }
+  return e;
+}
+
+function ripExpr(pts: { t: number; x: number; y: number }[], k: "x" | "y"): string {
+  let e = pts[pts.length - 1][k].toFixed(1);
+  for (let i = pts.length - 2; i >= 0; i--) e = `if(lt(t,${(pts[i + 1].t - 0.01).toFixed(2)}),${pts[i][k].toFixed(1)},${e})`;
+  return e;
 }
 
 export function cmdVideo(args: string[], speed?: number): number {
